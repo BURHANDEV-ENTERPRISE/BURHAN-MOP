@@ -3,6 +3,32 @@
   "version": "0.1.0",
   "description": "MemoryOfPlanet portable agent memory core installer and CLI.",
   "type": "module",
+  "author": "BURHANDEV ENTERPRISE",
+  "homepage": "https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP#readme",
+  "bugs": {
+    "url": "https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP.git"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "memory",
+    "memorycore",
+    "codex",
+    "claude",
+    "gemini",
+    "antigravity",
+    "workflow",
+    "bmad",
+    "autosync",
+    "mcp"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "burhan-mop": "bin/burhan-mop.mjs",
     "mop-core": "bin/mop-core.mjs",
@@ -12,7 +38,12 @@
     "validate": "node .memoryofplanet/scripts/mop-core.mjs validate",
     "status": "node .memoryofplanet/scripts/mop-core.mjs status",
     "workflow": "node .memoryofplanet/scripts/mop-workflow.mjs status",
-    "doctor": "node .memoryofplanet/scripts/burhan-mop.mjs doctor"
+    "doctor": "node .memoryofplanet/scripts/burhan-mop.mjs doctor",
+    "pack:dry": "npm pack --dry-run",
+    "publish:dry": "npm publish --dry-run",
+    "publish:public": "npm publish",
+    "prepack": "npm run validate",
+    "prepublishOnly": "npm run validate && npm run doctor"
   },
   "files": [
     "bin",
@@ -27,5 +58,9 @@
     ".gemini",
     ".mcp.json"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "license": "UNLICENSED"
 }
