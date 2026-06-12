@@ -142,7 +142,7 @@ dan merge hanya bila workflow selamat.
 | --- | --- |
 | npm package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
 | command latest | `npx burhan-mop install` |
-| GitHub release | [`v0.1.4`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.4) |
+| GitHub release | [`v0.1.5`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.5) |
 | Node | `>=20` |
 
 ## Links
