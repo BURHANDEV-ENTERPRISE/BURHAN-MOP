@@ -17,10 +17,11 @@ follow `.MOP/PROTOCOL.md`.
 - If the router marks the task as ambiguous, the named primary agent must ask
   clarifying questions before implementation.
 - If the router returns `partyMode.active: true`, use Party Mode. Show
-  `PARTY MODE` in large uppercase before the dialogue, then show
-  agent-to-agent and agent-to-user dialogue with the exact format from
-  `.MOP/PROTOCOL.md`. Party Mode normally uses at least 3 agents and
-  prefers 4 when relevant roles exist.
+  `PARTY MODE` in large uppercase before the dialogue, then generate the
+  agent-to-agent and agent-to-user dialogue explicitly in your response using this exact format:
+  `agent: <from-name> (<from-role>) to agent: <to-name> (<to-role>)`
+  `          <message>`
+  Party Mode normally uses at least 3 agents and prefers 4 when relevant roles exist.
 - For complex work or "what next?" questions, use MOP Workflow:
   `mop-workflow.mjs help --actor <codename> --task "<user task>"`.
 - Before implementation, run the readiness gate. If it is not `ready`, ask
