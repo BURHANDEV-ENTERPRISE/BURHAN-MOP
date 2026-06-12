@@ -1,0 +1,10 @@
+name: "BURHAN-MOP CodeQL config"
+
+paths:
+  - bin
+  - .memoryofplanet/scripts
+  - .claude/helpers
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/*.md"

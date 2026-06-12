@@ -49,3 +49,6 @@ Before doing anything, read `.memoryofplanet/STATE.json` and follow
 - MCP server map: `.mcp.json`
 - Ruflo runtime config: `.claude-flow/config.yaml`
 - Antigravity skills: `.agents/skills/`
+
+Installer command after npm publish: `npx burhan-mop install`.
+Before npm publish, use: `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.

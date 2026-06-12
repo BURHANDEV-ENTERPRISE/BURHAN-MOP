@@ -4,9 +4,9 @@
   "description": "MemoryOfPlanet portable agent memory core installer and CLI.",
   "type": "module",
   "bin": {
-    "burhan-mop": ".memoryofplanet/scripts/burhan-mop.mjs",
-    "mop-core": ".memoryofplanet/scripts/mop-core.mjs",
-    "mop-workflow": ".memoryofplanet/scripts/mop-workflow.mjs"
+    "burhan-mop": "bin/burhan-mop.mjs",
+    "mop-core": "bin/mop-core.mjs",
+    "mop-workflow": "bin/mop-workflow.mjs"
   },
   "scripts": {
     "validate": "node .memoryofplanet/scripts/mop-core.mjs validate",
@@ -15,6 +15,7 @@
     "doctor": "node .memoryofplanet/scripts/burhan-mop.mjs doctor"
   },
   "files": [
+    "bin",
     "AGENTS.md",
     "CLAUDE.md",
     "GEMINI.md",

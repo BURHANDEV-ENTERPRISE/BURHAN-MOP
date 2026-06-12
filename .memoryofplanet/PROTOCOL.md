@@ -290,6 +290,13 @@ The package installer command is:
 npx burhan-mop install
 ```
 
+The short package command works after the package is published to npm. Before
+an npm publish, install directly from GitHub:
+
+```bash
+npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
+```
+
 Local equivalent:
 
 ```bash
