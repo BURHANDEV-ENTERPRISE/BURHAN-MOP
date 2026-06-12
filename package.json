@@ -1,0 +1,30 @@
+{
+  "name": "burhan-mop",
+  "version": "0.1.0",
+  "description": "MemoryOfPlanet portable agent memory core installer and CLI.",
+  "type": "module",
+  "bin": {
+    "burhan-mop": ".memoryofplanet/scripts/burhan-mop.mjs",
+    "mop-core": ".memoryofplanet/scripts/mop-core.mjs",
+    "mop-workflow": ".memoryofplanet/scripts/mop-workflow.mjs"
+  },
+  "scripts": {
+    "validate": "node .memoryofplanet/scripts/mop-core.mjs validate",
+    "status": "node .memoryofplanet/scripts/mop-core.mjs status",
+    "workflow": "node .memoryofplanet/scripts/mop-workflow.mjs status",
+    "doctor": "node .memoryofplanet/scripts/burhan-mop.mjs doctor"
+  },
+  "files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".memoryofplanet",
+    ".agents",
+    ".claude",
+    ".claude-flow",
+    ".codex",
+    ".gemini",
+    ".mcp.json"
+  ],
+  "license": "UNLICENSED"
+}
