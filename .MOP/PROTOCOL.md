@@ -60,6 +60,40 @@ Gate order:
 3. `AGENT_GATE`
 4. `ACTION`
 
+## Answer Contract
+
+For every authenticated user-facing answer, the assistant must show the active
+named agent before the content. This applies to short answers, explanations,
+status updates, plans, code-change summaries, and final responses.
+
+Required first line format:
+
+```text
+agent: <agent-name> (<agent-role>) to <user>
+```
+
+Rules:
+
+- Do not answer authenticated work without an active named agent.
+- If no active agent exists, ask the user to name the required agent and stop.
+- After `agent route`, use `answerContract.firstLine` from the JSON response.
+- Party Mode keeps the full party dialogue format, but the final handoff to the
+  user must still show the speaking agent.
+- Never hide the selected agent in prose. The first visible line must identify
+  the agent.
+
+Before answering, restore monthly memory:
+
+```bash
+node .MOP/scripts/mop-core.mjs memory brief --actor <codename>
+```
+
+After meaningful work or a useful answer, save memory:
+
+```bash
+node .MOP/scripts/mop-core.mjs memory add --actor <codename> --kind conversation --summary "<one-line outcome>"
+```
+
 ## Agent Router
 
 After authentication and before the Agent Gate, route the user's task to one
@@ -88,6 +122,9 @@ Routing rules:
   genuinely requires several areas of expertise.
 - If the route reports `partyMode.active: true`, run Party Mode before the final
   answer. Name any missing participant agents first.
+- The route JSON includes an `answerContract`. The assistant must restore
+  monthly memory, start the visible answer with `answerContract.firstLine`, and
+  save a one-line memory after meaningful work.
 
 Example:
 
@@ -281,6 +318,34 @@ Default skill: `mop-help`. Use it when the user asks:
 The skill must call `mop-workflow.mjs help` and answer with the next action,
 lead agent, party agents, next artifact, and whether readiness/adversarial gates
 apply.
+
+## Monthly Memory
+
+MOP keeps durable memory in two layers:
+
+- `.MOP/STATE.json` ledger for compact structured state.
+- `.MOP/memory/YYYY-MM.jsonl` for append-only monthly conversation memory.
+
+The monthly memory file exists so a fresh chat can restore prior context without
+the user explaining the whole project again. Each useful session must:
+
+1. Run `memory brief` before answering after authentication.
+2. Save one-line outcomes with `memory add`.
+3. Use `.MOP/memory/SESSION_BRIEF.md` as the short human-readable handoff.
+
+Commands:
+
+```bash
+node .MOP/scripts/mop-core.mjs memory brief --actor <codename>
+node .MOP/scripts/mop-core.mjs memory restore --actor <codename>
+node .MOP/scripts/mop-core.mjs memory add --actor <codename> --kind conversation --summary "<what happened>"
+```
+
+Autosycn memory also writes to the monthly memory file:
+
+```bash
+node .MOP/scripts/mop-autosycn.mjs memory --actor <codename> --summary "<what changed>"
+```
 
 ## Installer
 

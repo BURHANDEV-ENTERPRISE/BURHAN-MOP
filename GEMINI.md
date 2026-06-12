@@ -9,6 +9,13 @@ rules are imported below.
 
 - First action still applies: read `.MOP/STATE.json` and follow
   `.MOP/PROTOCOL.md`.
+- After authentication, run `mop-core.mjs memory brief --actor <codename>` and
+  `mop-core.mjs agent route --actor <codename> --task "<user task>"` before
+  answering.
+- Every authenticated answer must start with `answerContract.firstLine`, for
+  example: `agent: <agent-name> (<agent-role>) to <user>`.
+- Save a one-line memory after meaningful work with
+  `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<outcome>"`.
 - Treat the current workspace root as the project root; do not create a nested
   project wrapper folder for app work unless the user explicitly asks for it.
 - Use `.gemini/settings.json` for context filenames and MCP server setup.

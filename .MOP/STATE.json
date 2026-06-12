@@ -13,6 +13,31 @@
     "defaultTitle": "Core Agent",
     "gateOrder": "AUTH_GATE_THEN_AGENT_ROUTER_THEN_AGENT_GATE_THEN_ACTION"
   },
+  "answerPolicy": {
+    "requireVisibleAgent": true,
+    "visibleAgentFormat": "agent: <agent-name> (<agent-role>) to <user>",
+    "requireMemoryRestore": true,
+    "requireMemorySave": true,
+    "rules": [
+      "Every authenticated user-facing answer must start with the active named agent line.",
+      "If no active named agent exists, ask the user to name the required agent before answering the task.",
+      "Party Mode keeps its dialogue format, but the final handoff to the user must still show the speaking agent."
+    ]
+  },
+  "memoryPolicy": {
+    "enabled": true,
+    "directory": ".MOP/memory",
+    "sessionBrief": ".MOP/memory/SESSION_BRIEF.md",
+    "monthlyPattern": "YYYY-MM.jsonl",
+    "recentLimit": 20,
+    "restoreBeforeAnswer": true,
+    "saveAfterMeaningfulWork": true,
+    "rules": [
+      "Save one-line memories to a monthly JSONL file so new chats can restore context.",
+      "Generate SESSION_BRIEF.md from recent monthly memory entries.",
+      "Read memory brief before answering any authenticated task."
+    ]
+  },
   "agentRouter": {
     "enabled": true,
     "primaryAgentLimit": 1,

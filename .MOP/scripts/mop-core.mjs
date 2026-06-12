@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -87,6 +87,103 @@ function agentLedgerFields(agent) {
   } : {};
 }
 
+function memoryPolicy(state) {
+  return state.memoryPolicy || {
+    enabled: true,
+    directory: '.MOP/memory',
+    sessionBrief: '.MOP/memory/SESSION_BRIEF.md',
+    monthlyPattern: 'YYYY-MM.jsonl',
+    recentLimit: 20
+  };
+}
+
+function answerPolicy(state) {
+  return state.answerPolicy || {
+    requireVisibleAgent: true,
+    visibleAgentFormat: 'agent: <agent-name> (<agent-role>) to <user>',
+    requireMemoryRestore: true,
+    requireMemorySave: true
+  };
+}
+
+function monthKey(date = new Date()) {
+  return date.toISOString().slice(0, 7);
+}
+
+function relativeFromRoot(path) {
+  return path.replace(rootDir, '').replace(/^[\\/]/, '').replaceAll('\\', '/');
+}
+
+function memoryDirFor(state) {
+  return join(rootDir, memoryPolicy(state).directory || '.MOP/memory');
+}
+
+function monthlyMemoryPath(state, month = monthKey()) {
+  const policy = memoryPolicy(state);
+  const filename = (policy.monthlyPattern || 'YYYY-MM.jsonl').replace('YYYY-MM', month);
+  return join(memoryDirFor(state), filename);
+}
+
+function sessionBriefPath(state) {
+  return join(rootDir, memoryPolicy(state).sessionBrief || '.MOP/memory/SESSION_BRIEF.md');
+}
+
+function readJsonl(path) {
+  if (!existsSync(path)) return [];
+  return readFileSync(path, 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function memoryMonths(state) {
+  const dir = memoryDirFor(state);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => /^\d{4}-\d{2}\.jsonl$/.test(name))
+    .map((name) => name.replace(/\.jsonl$/, ''))
+    .sort();
+}
+
+function latestMemoryEntries(state, limit = memoryPolicy(state).recentLimit || 20) {
+  const months = memoryMonths(state);
+  const selected = months.length ? months.slice(-3) : [monthKey()];
+  return selected
+    .flatMap((month) => readJsonl(monthlyMemoryPath(state, month)))
+    .sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')))
+    .slice(-limit);
+}
+
+function answerContractFor(state, actor, agent = activeAgentFor(state, actor)) {
+  const policy = answerPolicy(state);
+  const format = policy.visibleAgentFormat || 'agent: <agent-name> (<agent-role>) to <user>';
+  const firstLine = agent
+    ? format
+      .replace('<agent-name>', agent.name)
+      .replace('<agent-role>', agent.role)
+      .replace('<agent-title>', agent.title || agent.role)
+      .replace('<user>', actor || 'user')
+    : '';
+  return {
+    required: policy.requireVisibleAgent !== false,
+    firstLine,
+    beforeAnswer: `node .MOP/scripts/mop-core.mjs memory brief --actor ${actor || '<codename>'}`,
+    afterAnswer: `node .MOP/scripts/mop-core.mjs memory add --actor ${actor || '<codename>'} --kind conversation --summary "<one-line outcome>"`,
+    rules: [
+      'Do not answer authenticated work without an active named agent.',
+      'Every user-facing answer must show the active agent line first.',
+      'Restore monthly memory before answering and save a one-line memory after meaningful work.'
+    ]
+  };
+}
+
 function requireActiveAgent(state, actor, role = 'core', title = 'Core Agent') {
   const agent = activeAgentFor(state, actor);
   if (agent) return agent;
@@ -100,6 +197,48 @@ function requireActiveAgent(state, actor, role = 'core', title = 'Core Agent') {
 function appendLedger(state, actor, kind, summary, agent = activeAgentFor(state, actor)) {
   state.ledger ||= [];
   state.ledger.push({ at: now(), actor, ...agentLedgerFields(agent), kind, summary });
+}
+
+function appendMonthlyMemory(state, actor, kind, summary, agent = activeAgentFor(state, actor)) {
+  if (memoryPolicy(state).enabled === false) return null;
+  const entry = { at: now(), actor, ...agentLedgerFields(agent), kind, summary };
+  const monthlyPath = monthlyMemoryPath(state);
+  mkdirSync(dirname(monthlyPath), { recursive: true });
+  writeFileSync(monthlyPath, `${JSON.stringify(entry)}\n`, { encoding: 'utf8', flag: 'a' });
+  writeSessionBrief(state, actor);
+  return { entry, monthlyPath };
+}
+
+function writeSessionBrief(state, actor) {
+  const path = sessionBriefPath(state);
+  const agent = activeAgentFor(state, actor);
+  const entries = latestMemoryEntries(state, memoryPolicy(state).recentLimit || 20);
+  const contract = answerContractFor(state, actor, agent);
+  const lines = [
+    '# MOP Session Brief',
+    '',
+    `Updated: ${now()}`,
+    `Actor: ${actor || state.activeMember || 'unknown'}`,
+    `Active agent: ${agent ? `${agent.name} (${agent.role})` : 'none'}`,
+    `Current month: ${monthKey()}`,
+    '',
+    '## Required Session Flow',
+    '',
+    '1. Read `.MOP/STATE.json` and follow `.MOP/PROTOCOL.md`.',
+    '2. Authenticate if required.',
+    '3. Run `agent route` for the user task before answering.',
+    `4. Start every authenticated answer with: \`${contract.firstLine || 'agent: <name> (<role>) to <user>'}\``,
+    '5. Save a one-line memory after meaningful work.',
+    '',
+    '## Recent Memory',
+    '',
+    ...entries.map((entry) => {
+      const who = entry.agent ? `${entry.agent} (${entry.agentRole || 'agent'})` : entry.actor;
+      return `- ${entry.at} - ${who}: ${entry.summary}`;
+    })
+  ];
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${lines.join('\n')}\n`, 'utf8');
 }
 
 const routeRules = [
@@ -192,6 +331,11 @@ const routeRules = [
     role: 'coder',
     support: ['tester', 'reviewer'],
     keywords: ['code', 'coding', 'implement', 'buat file', 'ubah file', 'fix code', 'script', 'function']
+  },
+  {
+    role: 'browser',
+    support: ['researcher', 'tester'],
+    keywords: ['browser', 'browse', 'scrape', 'scraping', 'extract', 'click', 'login flow', 'fill form', 'captcha', 'bot detection', 'website', 'url', 'webpage']
   },
   {
     role: 'researcher',
@@ -430,6 +574,12 @@ function login(args) {
   console.log(`Active member: ${codename}`);
   if (!activeAgentFor(state, codename) && state.agentPolicy?.requiredAfterAuth !== false) {
     console.log(`Agent diperlukan. Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${codename} --role ${state.agentPolicy?.defaultRole || 'core'} --title "${state.agentPolicy?.defaultTitle || 'Core Agent'}" --name "<agent-name>"`);
+  } else {
+    console.log(JSON.stringify({
+      next: 'restore-memory-and-route-task',
+      memoryRestore: `node .MOP/scripts/mop-core.mjs memory brief --actor ${codename}`,
+      answerContract: answerContractFor(state, codename)
+    }, null, 2));
   }
 }
 
@@ -548,6 +698,11 @@ function agentRoute(args) {
     route,
     partyAgents,
     activeAgent: null,
+    answerContract: null,
+    monthlyMemory: {
+      restoreCommand: `node .MOP/scripts/mop-core.mjs memory brief --actor ${actor}`,
+      saveCommand: `node .MOP/scripts/mop-core.mjs memory add --actor ${actor} --kind conversation --summary "<one-line outcome>"`
+    },
     nextAction: null
   };
 
@@ -562,6 +717,7 @@ function agentRoute(args) {
       role: agent.role,
       title: agent.title
     };
+    response.answerContract = answerContractFor(state, actor, agent);
     if (route.partyMode.active && missingPartyAgents.length) {
       response.ok = false;
       response.nextAction = 'name-required-party-agents';
@@ -591,6 +747,73 @@ function agentList() {
   }, null, 2));
 }
 
+function memoryAdd(args) {
+  const state = readState();
+  if (!state.initialized) throw new Error('MOP is not initialized.');
+  const actor = slug(requireArg(args, 'actor'));
+  if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  const agent = requireActiveAgent(state, actor);
+  const summary = String(args.summary || args._?.join(' ') || '').trim();
+  const kind = String(args.kind || 'conversation');
+  if (!summary) throw new Error('Missing --summary');
+
+  appendLedger(state, actor, 'memory', summary, agent);
+  const saved = appendMonthlyMemory(state, actor, kind, summary, agent);
+  writeState(state);
+  console.log(JSON.stringify({
+    ok: true,
+    actor,
+    agent: agent.name,
+    kind,
+    summary,
+    monthlyMemory: saved ? relativeFromRoot(saved.monthlyPath) : 'disabled',
+    sessionBrief: relativeFromRoot(sessionBriefPath(state)),
+    answerContract: answerContractFor(state, actor, agent)
+  }, null, 2));
+}
+
+function memoryBrief(args) {
+  const state = readState();
+  if (!state.initialized) {
+    console.log('MOP belum di-setup. Jalankan /mop-setup.');
+    return;
+  }
+  const actor = slug(String(args.actor || state.activeMember || ''));
+  if (!actor) throw new Error('Missing --actor');
+  if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  const agent = activeAgentFor(state, actor);
+  const month = String(args.month || monthKey());
+  const limit = Number(args.limit || memoryPolicy(state).recentLimit || 20);
+  const currentEntries = readJsonl(monthlyMemoryPath(state, month)).slice(-limit);
+  const recentEntries = latestMemoryEntries(state, limit);
+  if (agent) writeSessionBrief(state, actor);
+  console.log(JSON.stringify({
+    ok: true,
+    actor,
+    activeAgent: agent ? {
+      id: agent.id,
+      name: agent.name,
+      role: agent.role,
+      title: agent.title
+    } : null,
+    answerContract: answerContractFor(state, actor, agent),
+    memory: {
+      month,
+      monthPath: relativeFromRoot(monthlyMemoryPath(state, month)),
+      sessionBrief: relativeFromRoot(sessionBriefPath(state)),
+      currentMonthEntries: currentEntries,
+      recentEntries
+    },
+    next: agent
+      ? 'Use answerContract.firstLine before answering, then save memory after meaningful work.'
+      : `Agent diperlukan. Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${actor} --role ${state.agentPolicy?.defaultRole || 'core'} --title "${state.agentPolicy?.defaultTitle || 'Core Agent'}" --name "<agent-name>"`
+  }, null, 2));
+}
+
+function memoryRestore(args) {
+  return memoryBrief(args);
+}
+
 function memberGitIdentity(args) {
   const state = readState();
   if (!state.initialized) throw new Error('MOP is not initialized.');
@@ -616,6 +839,8 @@ function validate() {
   if (!Array.isArray(state.agentCatalog)) errors.push('agentCatalog must be array');
   if (state.activeAgents && typeof state.activeAgents !== 'object') errors.push('activeAgents must be object');
   if (state.agentPolicy && typeof state.agentPolicy !== 'object') errors.push('agentPolicy must be object');
+  if (state.answerPolicy && typeof state.answerPolicy !== 'object') errors.push('answerPolicy must be object');
+  if (state.memoryPolicy && typeof state.memoryPolicy !== 'object') errors.push('memoryPolicy must be object');
   if (state.agentRouter && typeof state.agentRouter !== 'object') errors.push('agentRouter must be object');
   if (state.partyMode && typeof state.partyMode !== 'object') errors.push('partyMode must be object');
   if (state.projectRootPolicy && typeof state.projectRootPolicy !== 'object') errors.push('projectRootPolicy must be object');
@@ -698,6 +923,8 @@ function status() {
       return [codename, agent ? { name: agent.name, role: agent.role, id: agent.id } : { id: agentId, missing: true }];
     })),
     agentPolicy: state.agentPolicy || {},
+    answerPolicy: answerPolicy(state),
+    memoryPolicy: memoryPolicy(state),
     agentRouter: state.agentRouter || {},
     partyMode: state.partyMode || {},
     workflow: {
@@ -751,6 +978,9 @@ function main() {
   if (command === 'agent' && subcommand === 'require') return agentRequire(args);
   if (command === 'agent' && subcommand === 'route') return agentRoute(args);
   if (command === 'agent' && subcommand === 'list') return agentList();
+  if (command === 'memory' && subcommand === 'add') return memoryAdd(args);
+  if (command === 'memory' && subcommand === 'brief') return memoryBrief(args);
+  if (command === 'memory' && subcommand === 'restore') return memoryRestore(args);
 
   console.log(`Usage:
   node .MOP/scripts/mop-core.mjs status
@@ -763,7 +993,10 @@ function main() {
   node .MOP/scripts/mop-core.mjs agent current --actor CODE
   node .MOP/scripts/mop-core.mjs agent require --actor CODE [--role ROLE] [--title TITLE]
   node .MOP/scripts/mop-core.mjs agent route --actor CODE --task "task text"
-  node .MOP/scripts/mop-core.mjs agent list`);
+  node .MOP/scripts/mop-core.mjs agent list
+  node .MOP/scripts/mop-core.mjs memory brief --actor CODE [--month YYYY-MM]
+  node .MOP/scripts/mop-core.mjs memory add --actor CODE --kind conversation --summary "what happened"
+  node .MOP/scripts/mop-core.mjs memory restore --actor CODE`);
 }
 
 try {

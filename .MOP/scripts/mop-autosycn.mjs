@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -107,6 +107,123 @@ function agentLedgerFields(agent) {
     agentRole: agent.role,
     agentId: agent.id
   } : {};
+}
+
+function memoryPolicy(state) {
+  return state.memoryPolicy || {
+    enabled: true,
+    directory: '.MOP/memory',
+    sessionBrief: '.MOP/memory/SESSION_BRIEF.md',
+    monthlyPattern: 'YYYY-MM.jsonl',
+    recentLimit: 20
+  };
+}
+
+function answerPolicy(state) {
+  return state.answerPolicy || {
+    requireVisibleAgent: true,
+    visibleAgentFormat: 'agent: <agent-name> (<agent-role>) to <user>'
+  };
+}
+
+function monthKey(date = new Date()) {
+  return date.toISOString().slice(0, 7);
+}
+
+function memoryDirFor(state) {
+  return join(rootDir, memoryPolicy(state).directory || '.MOP/memory');
+}
+
+function monthlyMemoryPath(state, month = monthKey()) {
+  const policy = memoryPolicy(state);
+  const filename = (policy.monthlyPattern || 'YYYY-MM.jsonl').replace('YYYY-MM', month);
+  return join(memoryDirFor(state), filename);
+}
+
+function sessionBriefPath(state) {
+  return join(rootDir, memoryPolicy(state).sessionBrief || '.MOP/memory/SESSION_BRIEF.md');
+}
+
+function readJsonl(path) {
+  if (!existsSync(path)) return [];
+  return readFileSync(path, 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function memoryMonths(state) {
+  const dir = memoryDirFor(state);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => /^\d{4}-\d{2}\.jsonl$/.test(name))
+    .map((name) => name.replace(/\.jsonl$/, ''))
+    .sort();
+}
+
+function latestMemoryEntries(state, limit = memoryPolicy(state).recentLimit || 20) {
+  const months = memoryMonths(state);
+  const selected = months.length ? months.slice(-3) : [monthKey()];
+  return selected
+    .flatMap((month) => readJsonl(monthlyMemoryPath(state, month)))
+    .sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')))
+    .slice(-limit);
+}
+
+function answerLineFor(state, actor, agent = activeAgentFor(state, actor)) {
+  if (!agent) return 'agent: <name> (<role>) to <user>';
+  return (answerPolicy(state).visibleAgentFormat || 'agent: <agent-name> (<agent-role>) to <user>')
+    .replace('<agent-name>', agent.name)
+    .replace('<agent-role>', agent.role)
+    .replace('<agent-title>', agent.title || agent.role)
+    .replace('<user>', actor || 'user');
+}
+
+function appendMonthlyMemory(state, actor, kind, summary, agent = activeAgentFor(state, actor)) {
+  if (memoryPolicy(state).enabled === false) return;
+  const entry = { at: now(), actor, ...agentLedgerFields(agent), kind, summary };
+  const monthlyPath = monthlyMemoryPath(state);
+  mkdirSync(dirname(monthlyPath), { recursive: true });
+  writeFileSync(monthlyPath, `${JSON.stringify(entry)}\n`, { encoding: 'utf8', flag: 'a' });
+  writeSessionBrief(state, actor);
+}
+
+function writeSessionBrief(state, actor) {
+  const path = sessionBriefPath(state);
+  const agent = activeAgentFor(state, actor);
+  const entries = latestMemoryEntries(state, memoryPolicy(state).recentLimit || 20);
+  const lines = [
+    '# MOP Session Brief',
+    '',
+    `Updated: ${now()}`,
+    `Actor: ${actor || state.activeMember || 'unknown'}`,
+    `Active agent: ${agent ? `${agent.name} (${agent.role})` : 'none'}`,
+    `Current month: ${monthKey()}`,
+    '',
+    '## Required Session Flow',
+    '',
+    '1. Read `.MOP/STATE.json` and follow `.MOP/PROTOCOL.md`.',
+    '2. Restore memory with `node .MOP/scripts/mop-core.mjs memory brief --actor <codename>`.',
+    '3. Run `agent route` for the user task before answering.',
+    `4. Start every authenticated answer with: \`${answerLineFor(state, actor, agent)}\``,
+    '5. Save a one-line memory after meaningful work.',
+    '',
+    '## Recent Memory',
+    '',
+    ...entries.map((entry) => {
+      const who = entry.agent ? `${entry.agent} (${entry.agentRole || 'agent'})` : entry.actor;
+      return `- ${entry.at} - ${who}: ${entry.summary}`;
+    })
+  ];
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${lines.join('\n')}\n`, 'utf8');
 }
 
 function appendLedger(state, actor, kind, summary, agent = activeAgentFor(state, actor)) {
@@ -392,10 +509,11 @@ function preflight(args) {
   }, null, 2));
 }
 
-function saveMemory(actor, summary) {
+function saveMemory(actor, summary, kind = 'conversation') {
   const state = readState();
   const agent = requireActiveAgent(state, actor);
   appendLedger(state, actor, 'memory', summary, agent);
+  appendMonthlyMemory(state, actor, kind, summary, agent);
   writeState(state);
   return state;
 }
@@ -588,7 +706,8 @@ function main() {
   if (command === 'memory') {
     const actor = requireArg(args, 'actor');
     const summary = String(args.summary || args.reason || 'MOP conversation');
-    saveMemory(actor, summary);
+    const kind = String(args.kind || 'conversation');
+    saveMemory(actor, summary, kind);
     console.log(`Memory saved for ${actor}.`);
     return;
   }

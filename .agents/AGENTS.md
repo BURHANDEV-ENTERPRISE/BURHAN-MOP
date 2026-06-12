@@ -14,6 +14,13 @@ Before doing anything, read `.MOP/STATE.json` and follow
 - After login, run the Agent Router: every conversation and action must route
   to one primary named agent. Check with `mop-core.mjs agent route --actor
   <codename> --task "<user task>"`.
+- Before answering, restore monthly memory with
+  `mop-core.mjs memory brief --actor <codename>`.
+- Every authenticated user-facing answer must start with the routed
+  `answerContract.firstLine`, for example:
+  `agent: <agent-name> (<agent-role>) to <user>`.
+- After meaningful work, save memory with
+  `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<outcome>"`.
 - If the router says clarification is needed, ask the clarifying questions
   before implementation.
 - If the router activates Party Mode, show visible agent-to-agent dialogue using

@@ -14,6 +14,13 @@ follow `.MOP/PROTOCOL.md`.
   It selects one primary role and may recommend any number of support roles
   when genuinely needed. If no named agent exists for a needed role, ask the
   user to name it and save it with `agent activate`.
+- Before answering an authenticated task, restore monthly memory:
+  `mop-core.mjs memory brief --actor <codename>`.
+- Every authenticated user-facing answer must start with the routed named agent
+  line from `answerContract.firstLine`, for example:
+  `agent: <agent-name> (<agent-role>) to <user>`.
+- After meaningful work or a useful answer, save memory:
+  `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<one-line outcome>"`.
 - If the router marks the task as ambiguous, the named primary agent must ask
   clarifying questions before implementation.
 - If the router returns `partyMode.active: true`, use Party Mode. Show
@@ -34,6 +41,8 @@ different agents.
 The active named agent must be recorded on every memory/ledger action. Do not
 activate irrelevant agents; route to one primary agent first, then add support
 agents through Party Mode only when useful.
+If the assistant cannot show the active agent line, it must stop and repair the
+agent route instead of answering invisibly.
 
 Default skill: `autosycn`. After meaningful changes, use
 `.MOP/scripts/mop-autosycn.mjs`. It must commit and merge with the
