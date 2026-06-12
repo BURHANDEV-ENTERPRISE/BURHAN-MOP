@@ -49,8 +49,9 @@ up when they ask.
 Default skill: `mop-help`. It answers "lepas ni buat apa?", routes the next MOP
 workflow phase, and names the next artifact/gate.
 
-Installer command after npm publish: `npx burhan-mop install`.
-Before npm publish, use: `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
+Installer command: `npx burhan-mop install`.
+GitHub source fallback for development builds:
+`npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
 
 During `/mop-setup`, ask whether to activate auto-deploy after the Git/GitHub
 identity questions.

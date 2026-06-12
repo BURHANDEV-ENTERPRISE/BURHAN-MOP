@@ -98,7 +98,9 @@ planned before coding, and how work should be saved.
 
 ### Install from npm
 
-After the package is published to npm:
+BURHAN-MOP is published on npm as
+[`burhan-mop`](https://www.npmjs.com/package/burhan-mop). Run this from the
+project root where you want to install the MemoryOfPlanet core:
 
 ```bash
 npx burhan-mop install
@@ -116,9 +118,10 @@ Overwrite existing BURHAN-MOP files:
 npx burhan-mop install --force
 ```
 
-### Install from GitHub before npm publish
+### Install from GitHub source
 
-This works now, even before the npm package is published:
+Use the GitHub source install only for development builds or as a fallback when
+you specifically want the repository version instead of the npm release:
 
 ```bash
 npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
@@ -477,14 +480,16 @@ node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor moon --
 
 ## Publishing to npm
 
-Package name:
+Current public package:
 
-```text
-burhan-mop
-```
+| Field | Value |
+| --- | --- |
+| Package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
+| Current release | `0.1.0` |
+| Install command | `npx burhan-mop install` |
 
-The package name was checked against the npm registry during setup and was not
-found, which means it is currently available unless someone publishes it first.
+npm versions are immutable. Before publishing the next release, update
+`package.json` to a new version such as `0.1.1`, `0.2.0`, or `1.0.0`.
 
 ### Local publish flow
 
@@ -495,6 +500,12 @@ npm run validate
 npm run doctor
 npm run pack:dry
 npm publish
+```
+
+If npm requires a 2FA code, publish with:
+
+```bash
+npm publish --otp=123456
 ```
 
 After publish:
@@ -522,6 +533,10 @@ Recommended secure setup:
 5. Run the workflow manually with `dry_run: true`.
 6. Run again with `dry_run: false` when ready.
 
+The workflow checks whether the current `package.json` version already exists on
+npm. If it does, the publish step is skipped so GitHub releases do not fail just
+because a version was published manually first.
+
 Alternative setup:
 
 1. Create an npm granular access token with publish permission.
@@ -546,16 +561,23 @@ Then publish again.
 <details>
   <summary>npx burhan-mop install does not work</summary>
 
-Before npm publish, use the GitHub package source:
+First confirm the public package is visible:
 
 ```bash
-npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
+npm view burhan-mop version
 ```
 
-After npm publish, use:
+Then run the install again:
 
 ```bash
 npx --yes burhan-mop install
+```
+
+If npm registry access is unavailable but you need to test the repository
+directly, use the GitHub source fallback:
+
+```bash
+npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
 ```
 </details>
 
@@ -612,7 +634,9 @@ sebelum coding, dan bagaimana kerja perlu disimpan.
 
 ### Install dari npm
 
-Selepas package dipublish ke npm:
+BURHAN-MOP sudah dipublish ke npm sebagai
+[`burhan-mop`](https://www.npmjs.com/package/burhan-mop). Jalankan dari root
+project yang mahu dipasang MemoryOfPlanet core:
 
 ```bash
 npx burhan-mop install
@@ -630,9 +654,10 @@ Paksa overwrite fail sedia ada:
 npx burhan-mop install --force
 ```
 
-### Install dari GitHub sebelum npm publish
+### Install dari GitHub source
 
-Ini sudah boleh digunakan sekarang:
+Guna install dari GitHub hanya untuk development build atau fallback bila mahu
+uji versi terus daripada repo, bukan release npm:
 
 ```bash
 npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
@@ -991,14 +1016,17 @@ node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor moon --
 
 ## Publish ke npm
 
-Nama package:
+Package public semasa:
 
-```text
-burhan-mop
-```
+| Field | Nilai |
+| --- | --- |
+| Package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
+| Release semasa | `0.1.0` |
+| Command install | `npx burhan-mop install` |
 
-Nama package sudah disemak dengan npm registry semasa setup dan tidak ditemui,
-jadi ia masih available kecuali ada orang publish dahulu.
+Versi npm tidak boleh dipublish semula dengan nombor yang sama. Sebelum release
+seterusnya, ubah `package.json` kepada versi baru seperti `0.1.1`, `0.2.0`,
+atau `1.0.0`.
 
 ### Local publish flow
 
@@ -1009,6 +1037,12 @@ npm run validate
 npm run doctor
 npm run pack:dry
 npm publish
+```
+
+Jika npm minta kod 2FA, publish dengan:
+
+```bash
+npm publish --otp=123456
 ```
 
 Selepas publish:
@@ -1036,6 +1070,10 @@ Setup secure yang disarankan:
 5. Run workflow manual dengan `dry_run: true`.
 6. Run lagi dengan `dry_run: false` bila ready.
 
+Workflow akan semak sama ada versi dalam `package.json` sudah wujud di npm. Jika
+sudah wujud, step publish akan diskip supaya GitHub release tidak gagal hanya
+kerana versi itu sudah dipublish manual terlebih dahulu.
+
 Setup alternatif:
 
 1. Buat npm granular access token dengan publish permission.
@@ -1060,16 +1098,23 @@ Kemudian publish semula.
 <details>
   <summary>npx burhan-mop install tidak jalan</summary>
 
-Sebelum npm publish, guna source GitHub:
+Semak dulu package public boleh dicapai:
 
 ```bash
-npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
+npm view burhan-mop version
 ```
 
-Selepas npm publish, guna:
+Kemudian run install semula:
 
 ```bash
 npx --yes burhan-mop install
+```
+
+Jika npm registry tidak boleh dicapai tetapi perlu test repo terus, guna fallback
+GitHub source:
+
+```bash
+npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
 ```
 </details>
 

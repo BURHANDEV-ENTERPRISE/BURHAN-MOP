@@ -54,8 +54,9 @@ up when they ask.
 Default skill: `mop-help`. It answers "lepas ni buat apa?", routes the next MOP
 workflow phase, and names the next artifact/gate.
 
-Installer command after npm publish: `npx burhan-mop install`.
-Before npm publish, use: `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
+Installer command: `npx burhan-mop install`.
+GitHub source fallback for development builds:
+`npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
 
 This directory is a portable Ruflo / Claude Flow agent core. It must work across
 Claude Code, Codex / ChatGPT coding surfaces, Gemini CLI, and Google
