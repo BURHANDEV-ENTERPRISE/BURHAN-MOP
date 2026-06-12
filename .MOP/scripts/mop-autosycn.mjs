@@ -247,22 +247,59 @@ function getMember(state, actor) {
   return member;
 }
 
+function githubIdentityPolicy(state) {
+  return state.autosync?.githubIdentity || {
+    requireMatchedGhUser: true,
+    useNoreplyForMemberCommits: true,
+    noreplyFormat: 'id-plus-login'
+  };
+}
+
+function currentGhUser() {
+  const result = runOptional('gh', ['api', 'user', '--jq', '{login:.login,id:.id,email:.email}']);
+  if (!result.ok) return null;
+  try {
+    return JSON.parse(result.stdout || '{}');
+  } catch {
+    return null;
+  }
+}
+
+function githubNoreplyEmail(user) {
+  if (!user?.login || !user?.id) return '';
+  return `${user.id}+${user.login}@users.noreply.github.com`;
+}
+
 function identityFor(state, actor) {
   const member = getMember(state, actor);
   const identity = member.gitIdentity || {};
+  const policy = githubIdentityPolicy(state);
+  const gh = currentGhUser();
   const name = identity.name || member.displayName || actor;
-  const email = identity.email || member.github?.noreplyEmail || '';
+  const githubUsername = identity.githubUsername || member.github?.username || gh?.login || '';
+  if (gh?.login && githubUsername && policy.requireMatchedGhUser !== false && gh.login.toLowerCase() !== githubUsername.toLowerCase()) {
+    throw new Error(`GitHub CLI authenticated as ${gh.login}, expected ${githubUsername}. Refusing to commit or push as the wrong user.`);
+  }
+  let email = identity.email || member.github?.noreplyEmail || '';
+  if (policy.useNoreplyForMemberCommits !== false) {
+    email = githubNoreplyEmail(gh);
+    if (!email) {
+      throw new Error('GitHub noreply identity is required for member commits. Run gh auth login as the real user, or set autosync.githubIdentity.useNoreplyForMemberCommits=false.');
+    }
+  }
   if (!email && state.autosync?.requireUserGitEmail !== false) {
     throw new Error([
       `Missing git email for ${actor}.`,
-      'Set a GitHub-verified email or noreply email first:',
-      `node .MOP/scripts/mop-core.mjs member git-identity --actor ${actor} --name "${name}" --email "<github-verified-email>" [--github-username "<username>"]`
+      'Set a GitHub-verified email or let MOP derive GitHub noreply from gh:',
+      `node .MOP/scripts/mop-core.mjs member git-identity --actor ${actor} --name "${name}" --email github-noreply [--github-username "<username>"]`
     ].join(' '));
   }
   return {
     name,
     email,
-    githubUsername: identity.githubUsername || member.github?.username || ''
+    githubUsername,
+    githubUserId: gh?.login?.toLowerCase() === githubUsername.toLowerCase() ? gh.id : identity.githubUserId,
+    emailSource: policy.useNoreplyForMemberCommits !== false ? 'github-noreply' : (identity.emailSource || 'manual')
   };
 }
 
@@ -335,15 +372,16 @@ function configureRemote(url, replaceRemote = false) {
 }
 
 function verifyGhUser(identity, state) {
-  if (!identity.githubUsername || state.autosync?.verifyGhUserWhenConfigured === false) return 'skipped';
-  const gh = runOptional('gh', ['api', 'user', '--jq', '.login']);
-  if (!gh.ok) {
+  const policy = githubIdentityPolicy(state);
+  if (state.autosync?.verifyGhUserWhenConfigured === false && policy.requireMatchedGhUser === false) return 'skipped';
+  const gh = currentGhUser();
+  if (!gh?.login) {
     throw new Error('GitHub username is configured, but gh could not verify the active account. Run gh auth login as the real user or set autosync.verifyGhUserWhenConfigured=false for SSH-only workflows.');
   }
-  if (gh.stdout.toLowerCase() !== identity.githubUsername.toLowerCase()) {
-    throw new Error(`GitHub CLI authenticated as ${gh.stdout}, expected ${identity.githubUsername}. Refusing to push as the wrong account.`);
+  if (identity.githubUsername && gh.login.toLowerCase() !== identity.githubUsername.toLowerCase()) {
+    throw new Error(`GitHub CLI authenticated as ${gh.login}, expected ${identity.githubUsername}. Refusing to push as the wrong account.`);
   }
-  return `verified:${gh.stdout}`;
+  return `verified:${gh.login}:${githubNoreplyEmail(gh) || 'email-unavailable'}`;
 }
 
 function runProjectCommand(command, env) {
@@ -677,6 +715,7 @@ function status() {
     workBranchPrefix: state.autosync?.workBranchPrefix || 'dev',
     autoMergeToMain: state.autosync?.autoMergeToMain !== false,
     mergeGuardian: guardianConfig(state),
+    githubIdentity: githubIdentityPolicy(state),
     preflightBeforeWork: state.autosync?.preflightBeforeWork !== false,
     requireUserGitEmail: state.autosync?.requireUserGitEmail !== false,
     initialized: state.initialized,
@@ -691,7 +730,8 @@ function status() {
         displayName: member.displayName,
         gitIdentityConfigured: Boolean(member.gitIdentity?.email || member.github?.noreplyEmail),
         gitName: member.gitIdentity?.name || member.displayName || key,
-        gitEmail: member.gitIdentity?.email || member.github?.noreplyEmail || ''
+        gitEmail: member.gitIdentity?.email || member.github?.noreplyEmail || '',
+        githubUsername: member.gitIdentity?.githubUsername || member.github?.username || ''
       }
     ]))
   }, null, 2));

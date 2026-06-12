@@ -46,8 +46,8 @@ follow `.MOP/PROTOCOL.md`.
 
 For `/mop-setup`, ask in order: project name (default folder name), owner display
 name, owner codename, password, solo/team, conversation language, coding
-language, GitHub link, GitHub username, Git commit email, join mode if team,
-then whether to activate auto-deploy now or later.
+language, GitHub link, GitHub username, Git commit email (`github-noreply` by
+default), join mode if team, then whether to activate auto-deploy now or later.
 
 Agent role/template names are not personal AI names. When a role agent is first
 needed, ask the user to name it and save it with `mop-core.mjs agent activate`.
@@ -62,6 +62,9 @@ agent route instead of answering invisibly.
 Default skill: `autosycn`. After meaningful changes, use
 `.MOP/scripts/mop-autosycn.mjs`. It must commit and merge with the
 real member Git identity from state, never with the AI tool identity.
+Member commits must use the active member GitHub account; by default MOP derives
+`ID+USERNAME@users.noreply.github.com` from `gh api user` and refuses mismatched
+GitHub accounts. `BURHAN-MOP` identity is only for merge guardian commits.
 In team mode, run `preflight --actor <codename>` before starting work; work goes
 to `dev/<codename>`. Every small or large change is pushed there first, then
 BURHAN-MOP reviews and merges to `main` only when checks pass.

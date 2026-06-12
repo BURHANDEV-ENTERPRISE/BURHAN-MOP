@@ -399,7 +399,18 @@
       }
     },
     "requireUserGitEmail": true,
-    "verifyGhUserWhenConfigured": true
+    "verifyGhUserWhenConfigured": true,
+    "githubIdentity": {
+      "requireMatchedGhUser": true,
+      "useNoreplyForMemberCommits": true,
+      "noreplyFormat": "id-plus-login",
+      "rules": [
+        "Member commits must use the active member GitHub account, not an AI or guardian identity.",
+        "When gh is authenticated, derive member commit email as ID+USERNAME@users.noreply.github.com.",
+        "Refuse autosycn if the active gh account does not match the member githubUsername.",
+        "BURHAN-MOP identity is reserved for merge guardian commits only."
+      ]
+    }
   },
   "members": {},
   "installedSkills": [

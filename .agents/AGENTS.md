@@ -34,6 +34,10 @@ Before doing anything, read `.MOP/STATE.json` and follow
 - For risky changes, run adversarial review before implementation or merge.
 - When a role agent first appears, ask the user to name it before using it as a
   personal agent.
+- Autosycn member commits must use the active member GitHub account. By default,
+  MOP derives `ID+USERNAME@users.noreply.github.com` from `gh api user` and
+  refuses mismatched GitHub accounts. `BURHAN-MOP` identity is reserved for
+  merge guardian commits only.
 
 ## Operating Rules
 

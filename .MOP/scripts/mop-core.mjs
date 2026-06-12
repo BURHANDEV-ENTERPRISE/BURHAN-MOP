@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFile
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const coreDir = resolve(here, '..');
@@ -69,6 +70,53 @@ function verifyPassword(password, salt, expectedHex) {
   const actual = scryptSync(password, salt, 64);
   const expected = Buffer.from(expectedHex, 'hex');
   return expected.length === actual.length && timingSafeEqual(actual, expected);
+}
+
+function currentGhUser() {
+  const result = spawnSync('gh', ['api', 'user', '--jq', '{login:.login,id:.id,email:.email}'], {
+    cwd: rootDir,
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) return null;
+  try {
+    return JSON.parse(result.stdout || '{}');
+  } catch {
+    return null;
+  }
+}
+
+function githubNoreplyEmail(user) {
+  if (!user?.login || !user?.id) return '';
+  return `${user.id}+${user.login}@users.noreply.github.com`;
+}
+
+function resolveGitIdentityInput(state, actor, name, emailInput, githubUsernameInput) {
+  const policy = state.autosync?.githubIdentity || {};
+  const preferNoreply = policy.useNoreplyForMemberCommits !== false;
+  const gh = currentGhUser();
+  const githubUsername = githubUsernameInput || gh?.login || '';
+  if (gh?.login && githubUsername && policy.requireMatchedGhUser !== false && gh.login.toLowerCase() !== githubUsername.toLowerCase()) {
+    throw new Error(`GitHub CLI authenticated as ${gh.login}, expected ${githubUsername}. Run gh auth login as the real user.`);
+  }
+
+  let email = String(emailInput || '').trim();
+  const wantsNoreply = !email || ['auto', 'github', 'github-noreply', 'noreply'].includes(email.toLowerCase());
+  if (preferNoreply && wantsNoreply) {
+    email = githubNoreplyEmail(gh);
+    if (!email) {
+      throw new Error('Cannot derive GitHub noreply email. Run gh auth login or provide --git-email "<github-verified-email>".');
+    }
+  }
+  if (!email && state.autosync?.requireUserGitEmail !== false) {
+    throw new Error('Git email is required. Use --git-email github-noreply after gh auth login, or provide a GitHub-verified email.');
+  }
+  return {
+    name,
+    email,
+    githubUsername,
+    githubUserId: gh?.login?.toLowerCase() === githubUsername.toLowerCase() ? gh.id : undefined,
+    emailSource: wantsNoreply && email ? 'github-noreply' : 'manual'
+  };
 }
 
 function activeAgentFor(state, actor) {
@@ -502,7 +550,7 @@ function setup(args) {
   const codingLanguage = String(args['coding-language'] || 'English');
   const githubUrl = String(args['github-url'] || '');
   const gitName = String(args['git-name'] || displayName);
-  const gitEmail = String(args['git-email'] || '');
+  const gitEmail = String(args['git-email'] || 'github-noreply');
   const githubUsername = String(args['github-username'] || '');
   const joinMode = String(args['join-mode'] || 'owner-approved');
 
@@ -510,12 +558,10 @@ function setup(args) {
   if (password.length < 8) throw new Error('Password must be at least 8 characters.');
   if (!['solo', 'team'].includes(mode)) throw new Error('Mode must be solo or team.');
   if (mode === 'team' && !githubUrl) throw new Error('Team mode requires --github-url.');
-  if (state.autosync?.requireUserGitEmail !== false && !gitEmail) {
-    throw new Error('Git email is required so commits are attributed to the real user, not the AI tool.');
-  }
   if (!['open', 'owner-approved', 'invite'].includes(joinMode)) {
     throw new Error('Join mode must be open, owner-approved, or invite.');
   }
+  const gitIdentity = resolveGitIdentityInput(state, codename, gitName, gitEmail, githubUsername);
 
   const { passwordHash, passwordSalt } = hashPassword(password);
   state.initialized = true;
@@ -545,11 +591,7 @@ function setup(args) {
         conversation: conversationLanguage,
         coding: codingLanguage
       },
-      gitIdentity: {
-        name: gitName,
-        email: gitEmail,
-        githubUsername
-      },
+      gitIdentity,
       joinedAt: now()
     }
   };
@@ -822,12 +864,12 @@ function memberGitIdentity(args) {
   if (!member) throw new Error('Unknown actor.');
   const agent = requireActiveAgent(state, actor);
   const name = String(args.name || member.displayName || actor);
-  const email = requireArg(args, 'email');
+  const email = String(args.email || 'github-noreply');
   const githubUsername = String(args['github-username'] || member.gitIdentity?.githubUsername || '');
-  member.gitIdentity = { name, email, githubUsername };
+  member.gitIdentity = resolveGitIdentityInput(state, actor, name, email, githubUsername);
   appendLedger(state, actor, 'git-identity', `Updated git identity for ${actor}.`, agent);
   writeState(state);
-  console.log(`Git identity set for ${actor}: ${name} <${email}>${githubUsername ? ` github=${githubUsername}` : ''}`);
+  console.log(`Git identity set for ${actor}: ${member.gitIdentity.name} <${member.gitIdentity.email}>${member.gitIdentity.githubUsername ? ` github=${member.gitIdentity.githubUsername}` : ''}`);
 }
 
 function validate() {
@@ -843,6 +885,9 @@ function validate() {
   if (state.memoryPolicy && typeof state.memoryPolicy !== 'object') errors.push('memoryPolicy must be object');
   if (state.agentRouter && typeof state.agentRouter !== 'object') errors.push('agentRouter must be object');
   if (state.partyMode && typeof state.partyMode !== 'object') errors.push('partyMode must be object');
+  if (state.autosync?.githubIdentity && typeof state.autosync.githubIdentity !== 'object') {
+    errors.push('autosync.githubIdentity must be object');
+  }
   if (state.projectRootPolicy && typeof state.projectRootPolicy !== 'object') errors.push('projectRootPolicy must be object');
   if (state.projectRootPolicy?.rules && !Array.isArray(state.projectRootPolicy.rules)) {
     errors.push('projectRootPolicy.rules must be array');
@@ -985,9 +1030,9 @@ function main() {
   console.log(`Usage:
   node .MOP/scripts/mop-core.mjs status
   node .MOP/scripts/mop-core.mjs validate
-  node .MOP/scripts/mop-core.mjs setup --project-name NAME --name DISPLAY --codename CODE --password PASS --mode solo|team --conversation-language LANG --coding-language LANG --git-email EMAIL [--git-name NAME] [--github-username USER] [--github-url URL]
+  node .MOP/scripts/mop-core.mjs setup --project-name NAME --name DISPLAY --codename CODE --password PASS --mode solo|team --conversation-language LANG --coding-language LANG [--git-email github-noreply|EMAIL] [--git-name NAME] [--github-username USER] [--github-url URL]
   node .MOP/scripts/mop-core.mjs login --codename CODE --password PASS
-  node .MOP/scripts/mop-core.mjs member git-identity --actor CODE --name NAME --email EMAIL [--github-username USER]
+  node .MOP/scripts/mop-core.mjs member git-identity --actor CODE --name NAME [--email github-noreply|EMAIL] [--github-username USER]
   node .MOP/scripts/mop-core.mjs agent activate --actor CODE --role ROLE --title TITLE --name NAME
   node .MOP/scripts/mop-core.mjs agent use --actor CODE --name NAME
   node .MOP/scripts/mop-core.mjs agent current --actor CODE

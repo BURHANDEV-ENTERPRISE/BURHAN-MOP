@@ -31,7 +31,8 @@ Use this order:
 7. Coding/adventure language.
 8. GitHub project link. Required for `team`, optional for `solo`.
 9. GitHub username.
-10. Git commit email. Use a GitHub-verified email or GitHub noreply email.
+10. Git commit email. Default to `github-noreply` so MOP derives the active
+    GitHub account email as `ID+USERNAME@users.noreply.github.com`.
 11. If `team`, ask join mode: `open`, `owner-approved`, or `invite`.
 12. Ask auto deploy: `Nak aktifkan auto deploy sekarang? Pilih provider:
     GitHub, Docker, Vercel.` If the user says later/no, answer with the defer
@@ -40,7 +41,7 @@ Use this order:
 After confirmation, run:
 
 ```bash
-node .MOP/scripts/mop-core.mjs setup --project-name "<name>" --name "<display>" --codename <codename> --password "<password>" --mode <solo|team> --conversation-language "<lang>" --coding-language "<lang>" --git-email "<github-verified-email>" [--git-name "<display>"] [--github-username "<github-login>"] [--github-url "<url>"] [--join-mode <mode>]
+node .MOP/scripts/mop-core.mjs setup --project-name "<name>" --name "<display>" --codename <codename> --password "<password>" --mode <solo|team> --conversation-language "<lang>" --coding-language "<lang>" --git-email github-noreply [--git-name "<display>"] [--github-username "<github-login>"] [--github-url "<url>"] [--join-mode <mode>]
 ```
 
 ## Agent Naming Ceremony
@@ -431,10 +432,13 @@ In team mode, an agent name is the identity.
 Autosycn is always available and should be used after meaningful state or file
 changes. It is intentionally identity-safe.
 
-Before first push for a member, configure the real Git identity:
+Before first push for a member, configure the real GitHub identity. Default to
+GitHub noreply so commits attach to the active user account without exposing
+private email:
 
 ```bash
-node .MOP/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email "<github-verified-email>" --github-username "<github-login>"
+gh auth login
+node .MOP/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email github-noreply --github-username "<github-login>"
 ```
 
 Then run:
@@ -455,6 +459,13 @@ Autosycn must:
 - Commit with `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and
   `GIT_COMMITTER_EMAIL` set from member state.
 - Set local `git config user.name` and `user.email` before commit/merge.
+- For member commits, derive `user.email` from the active GitHub CLI account as
+  `ID+USERNAME@users.noreply.github.com` when
+  `autosync.githubIdentity.useNoreplyForMemberCommits` is enabled.
+- Refuse to commit or push if `gh api user` is authenticated as a different
+  GitHub username than the active member's configured `githubUsername`.
+- Use the member GitHub identity for setup, preflight, memory, and work branch
+  commits. Use `BURHAN-MOP` only for merge guardian commits.
 - In team mode, `main` is the trunk and each user works on `dev/<codename>`.
 - Push to `dev/<codename>` in team mode and `main` in solo mode.
 - After a team push, BURHAN-MOP reviews `dev/<codename>` and merges it into
@@ -469,10 +480,11 @@ Autosycn must:
 - If `githubUsername` is configured, refuse to push unless `gh api user`
   verifies the same account.
 
-Important: GitHub commit attribution comes from commit email. GitHub push actor
-comes from the credential or SSH key used by `git push`; no script can fake that.
-If GitHub shows the AI/bot as pusher, fix `gh auth login`, Git Credential
-Manager, or the SSH key account.
+Important: GitHub commit attribution comes from commit email. MOP uses the
+active GitHub account noreply email for member commits by default. GitHub push
+actor comes from the credential or SSH key used by `git push`; no script can
+fake that. If GitHub shows the wrong pusher, fix `gh auth login`, Git
+Credential Manager, or the SSH key account.
 
 ## Default Skill: auto-deploy
 
