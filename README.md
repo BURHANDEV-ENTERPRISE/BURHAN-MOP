@@ -141,7 +141,7 @@ and merges only when the workflow is safe.
 | --- | --- |
 | npm package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
 | latest command | `npx burhan-mop install` |
-| GitHub release | [`v0.1.2`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.2) |
+| GitHub release | [`v0.1.4`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.4) |
 | Node | `>=20` |
 
 ## Links
