@@ -14,8 +14,8 @@
     "includeGateStatus": true
   },
   "artifacts": {
-    "directory": ".memoryofplanet/artifacts",
-    "templateDirectory": ".memoryofplanet/templates/artifacts",
+    "directory": ".MOP/artifacts",
+    "templateDirectory": ".MOP/templates/artifacts",
     "layout": "category/artifact-slug/type.md",
     "defaultCategory": "general",
     "folderByType": {

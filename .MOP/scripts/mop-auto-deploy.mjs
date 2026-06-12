@@ -102,7 +102,7 @@ function defer(args) {
 
 function enable(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   if (!state.members?.[actor]) throw new Error(`Unknown actor: ${actor}`);
   const confirm = String(args.confirm || '').toLowerCase();
@@ -138,10 +138,10 @@ function main() {
   if (command === 'enable') return enable(args);
 
   console.log(`Usage:
-  node .memoryofplanet/scripts/mop-auto-deploy.mjs status
-  node .memoryofplanet/scripts/mop-auto-deploy.mjs ask
-  node .memoryofplanet/scripts/mop-auto-deploy.mjs defer --actor <codename> --answer nanti
-  node .memoryofplanet/scripts/mop-auto-deploy.mjs enable --actor <codename> --provider github|docker|vercel|all --confirm yes`);
+  node .MOP/scripts/mop-auto-deploy.mjs status
+  node .MOP/scripts/mop-auto-deploy.mjs ask
+  node .MOP/scripts/mop-auto-deploy.mjs defer --actor <codename> --answer nanti
+  node .MOP/scripts/mop-auto-deploy.mjs enable --actor <codename> --provider github|docker|vercel|all --confirm yes`);
 }
 
 try {
@@ -150,4 +150,3 @@ try {
   console.error(error.message);
   process.exitCode = 1;
 }
-

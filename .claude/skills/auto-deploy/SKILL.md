@@ -20,12 +20,12 @@ Okey, nanti kalau nak deploy beri tahu saya. Saya setup auto deploy.
 Record defer:
 
 ```bash
-node .memoryofplanet/scripts/mop-auto-deploy.mjs defer --actor <codename> --answer nanti
+node .MOP/scripts/mop-auto-deploy.mjs defer --actor <codename> --answer nanti
 ```
 
 Activate only with confirmation:
 
 ```bash
-node .memoryofplanet/scripts/mop-auto-deploy.mjs enable --actor <codename> --provider github|docker|vercel|all --confirm yes
+node .MOP/scripts/mop-auto-deploy.mjs enable --actor <codename> --provider github|docker|vercel|all --confirm yes
 ```
 

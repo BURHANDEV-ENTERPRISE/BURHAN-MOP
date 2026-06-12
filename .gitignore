@@ -19,4 +19,4 @@ coverage/
 .DS_Store
 Thumbs.db
 
-.memoryofplanet/STATE.json.tmp
+.MOP/STATE.json.tmp

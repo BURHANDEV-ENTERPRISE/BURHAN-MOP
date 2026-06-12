@@ -97,7 +97,7 @@ function requireActiveAgent(state, actor, role = 'core', title = 'Core Agent') {
   throw new Error([
     `Agent diperlukan sebelum autosycn untuk ${actor}.`,
     `Task ini perlukan ${title}. Agent ini belum ada nama lagi atau belum dipilih.`,
-    `Jalankan: node .memoryofplanet/scripts/mop-core.mjs agent activate --actor ${actor} --role ${role} --title "${title}" --name "<agent-name>"`
+    `Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${actor} --role ${role} --title "${title}" --name "<agent-name>"`
   ].join(' '));
 }
 
@@ -139,7 +139,7 @@ function identityFor(state, actor) {
     throw new Error([
       `Missing git email for ${actor}.`,
       'Set a GitHub-verified email or noreply email first:',
-      `node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor ${actor} --name "${name}" --email "<github-verified-email>" [--github-username "<username>"]`
+      `node .MOP/scripts/mop-core.mjs member git-identity --actor ${actor} --name "${name}" --email "<github-verified-email>" [--github-username "<username>"]`
     ].join(' '));
   }
   return {
@@ -248,8 +248,8 @@ function runProjectCommand(command, env) {
 }
 
 function validateStateIfPresent() {
-  if (!existsSync(join(rootDir, '.memoryofplanet', 'STATE.json'))) return 'skipped';
-  const result = spawnSync('node', ['.memoryofplanet/scripts/mop-core.mjs', 'validate'], {
+  if (!existsSync(join(rootDir, '.MOP', 'STATE.json'))) return 'skipped';
+  const result = spawnSync('node', ['.MOP/scripts/mop-core.mjs', 'validate'], {
     cwd: rootDir,
     encoding: 'utf8'
   });
@@ -353,7 +353,7 @@ function syncMainFromOrigin(state, env) {
 function preflight(args) {
   ensureGitRepo();
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
   const identity = identityFor(state, actor);
@@ -406,10 +406,10 @@ function saveMemory(actor, summary) {
 function push(args) {
   ensureGitRepo();
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
-  const reason = String(args.reason || 'MemoryOfPlanet autosycn');
+  const reason = String(args.reason || 'MOP autosycn');
   const identity = identityFor(state, actor);
   const env = identityEnv(identity);
   const ghStatus = verifyGhUser(identity, state);
@@ -419,7 +419,7 @@ function push(args) {
   const before = currentBranch();
   const dirty = runGit(['status', '--porcelain']);
   if (state.mode === 'team' && before !== target && dirty) {
-    throw new Error(`Team autosycn must commit from ${target}. Run preflight before starting work: node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor ${actor}`);
+    throw new Error(`Team autosycn must commit from ${target}. Run preflight before starting work: node .MOP/scripts/mop-autosycn.mjs preflight --actor ${actor}`);
   }
   ensureBranch(target);
   const commit = commitIfNeeded(reason, env);
@@ -439,7 +439,7 @@ function push(args) {
 
 function init(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
   if (actor !== state.ownerCodename) throw new Error('Only the owner can initialize autosycn.');
@@ -456,7 +456,7 @@ function init(args) {
   appendLedger(state, actor, 'autosycn-init', `Initialized autosycn remote ${remote}.`, agent);
   if (url) state.githubUrl = url;
   writeState(state);
-  const commit = commitIfNeeded('Initialize MemoryOfPlanet autosycn baseline', env);
+  const commit = commitIfNeeded('Initialize MOP autosycn baseline', env);
   runGit(['push', '-u', 'origin', state.autosync?.targetMainBranch || 'main'], { env });
 
   console.log(JSON.stringify({
@@ -474,7 +474,7 @@ function init(args) {
 function mergeMain(args) {
   ensureGitRepo();
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
   if (state.autosync?.requireOwnerForMerge === true && actor !== state.ownerCodename) {
@@ -500,9 +500,9 @@ function mergeMain(args) {
   if (merge.status !== 0) {
     const conflicted = runOptional('git', ['diff', '--name-only', '--diff-filter=U']);
     const files = conflicted.stdout.split(/\r?\n/).filter(Boolean);
-    if (files.length === 1 && files[0].replaceAll('\\', '/') === '.memoryofplanet/STATE.json') {
-      runGit(['checkout', '--ours', '--', '.memoryofplanet/STATE.json']);
-      runGit(['add', '.memoryofplanet/STATE.json']);
+    if (files.length === 1 && files[0].replaceAll('\\', '/') === '.MOP/STATE.json') {
+      runGit(['checkout', '--ours', '--', '.MOP/STATE.json']);
+      runGit(['add', '.MOP/STATE.json']);
     } else {
       runOptional('git', ['merge', '--abort']);
       const detail = `${merge.stderr || merge.stdout}`.trim();
@@ -518,7 +518,7 @@ function mergeMain(args) {
       const mergedState = readState();
       appendLedger(mergedState, guardian.name || 'BURHAN-MOP', 'merge-approved', `${source} approved and merged to ${mainBranch}.`);
       writeState(mergedState);
-      runGit(['add', '.memoryofplanet/STATE.json']);
+      runGit(['add', '.MOP/STATE.json']);
     }
     runGit(['commit', '-m', reason], { env });
   } catch (error) {
@@ -543,7 +543,7 @@ function mergeMain(args) {
 
 function runAll(args) {
   const actor = requireArg(args, 'actor');
-  const reason = String(args.reason || 'MemoryOfPlanet autosycn');
+  const reason = String(args.reason || 'MOP autosycn');
   saveMemory(actor, reason);
   push({ ...args, actor, reason });
   const state = readState();
@@ -590,7 +590,7 @@ function main() {
   if (command === 'init') return init(args);
   if (command === 'memory') {
     const actor = requireArg(args, 'actor');
-    const summary = String(args.summary || args.reason || 'MemoryOfPlanet conversation');
+    const summary = String(args.summary || args.reason || 'MOP conversation');
     saveMemory(actor, summary);
     console.log(`Memory saved for ${actor}.`);
     return;
@@ -600,13 +600,13 @@ function main() {
   if (command === 'run') return runAll(args);
 
   console.log(`Usage:
-  node .memoryofplanet/scripts/mop-autosycn.mjs status
-  node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor <codename>
-  node .memoryofplanet/scripts/mop-autosycn.mjs init --actor <owner-codename> --url <github-url>
-  node .memoryofplanet/scripts/mop-autosycn.mjs memory --actor <codename> --summary "what happened"
-  node .memoryofplanet/scripts/mop-autosycn.mjs push --actor <codename> --reason "what changed"
-  node .memoryofplanet/scripts/mop-autosycn.mjs merge --actor <owner> --from <codename> --reason "merge reason"
-  node .memoryofplanet/scripts/mop-autosycn.mjs run --actor <codename> --reason "what changed"`);
+  node .MOP/scripts/mop-autosycn.mjs status
+  node .MOP/scripts/mop-autosycn.mjs preflight --actor <codename>
+  node .MOP/scripts/mop-autosycn.mjs init --actor <owner-codename> --url <github-url>
+  node .MOP/scripts/mop-autosycn.mjs memory --actor <codename> --summary "what happened"
+  node .MOP/scripts/mop-autosycn.mjs push --actor <codename> --reason "what changed"
+  node .MOP/scripts/mop-autosycn.mjs merge --actor <owner> --from <codename> --reason "merge reason"
+  node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "what changed"`);
 }
 
 try {

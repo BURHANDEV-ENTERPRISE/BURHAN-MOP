@@ -1,13 +1,13 @@
-# MemoryOfPlanet Core - Cross-Agent Instructions
+# MOP Core - Cross-Agent Instructions
 
 ## Authentication Gate - First Action
 
-Before doing anything in this workspace, read `.memoryofplanet/STATE.json` and
-follow `.memoryofplanet/PROTOCOL.md`.
+Before doing anything in this workspace, read `.MOP/STATE.json` and
+follow `.MOP/PROTOCOL.md`.
 
-- `initialized: false` -> output `MemoryOfPlanet belum di-setup. Jalankan /mop-setup.` Run the setup wizard only.
+- `initialized: false` -> output `MOP belum di-setup. Jalankan /mop-setup.` Run the setup wizard only.
 - `initialized: true` with no `activeMember` -> output `Codename dan password.` Do not continue until verified.
-- Verify credentials through `node .memoryofplanet/scripts/mop-core.mjs login --codename <codename> --password "<password>"`.
+- Verify credentials through `node .MOP/scripts/mop-core.mjs login --codename <codename> --password "<password>"`.
 - Wrong credentials -> output `Credentials tidak sah.`
 - After authentication, run the Agent Router before answering or acting:
   `mop-core.mjs agent route --actor <codename> --task "<user task>"`.
@@ -19,7 +19,7 @@ follow `.memoryofplanet/PROTOCOL.md`.
 - If the router returns `partyMode.active: true`, use Party Mode. Show
   `PARTY MODE` in large uppercase before the dialogue, then show
   agent-to-agent and agent-to-user dialogue with the exact format from
-  `.memoryofplanet/PROTOCOL.md`. Party Mode normally uses at least 3 agents and
+  `.MOP/PROTOCOL.md`. Party Mode normally uses at least 3 agents and
   prefers 4 when relevant roles exist.
 - For complex work or "what next?" questions, use MOP Workflow:
   `mop-workflow.mjs help --actor <codename> --task "<user task>"`.
@@ -41,7 +41,7 @@ activate irrelevant agents; route to one primary agent first, then add support
 agents through Party Mode only when useful.
 
 Default skill: `autosycn`. After meaningful changes, use
-`.memoryofplanet/scripts/mop-autosycn.mjs`. It must commit and merge with the
+`.MOP/scripts/mop-autosycn.mjs`. It must commit and merge with the
 real member Git identity from state, never with the AI tool identity.
 In team mode, run `preflight --actor <codename>` before starting work; work goes
 to `dev/<codename>`. Every small or large change is pushed there first, then

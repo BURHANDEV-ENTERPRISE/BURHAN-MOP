@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import '../.memoryofplanet/scripts/mop-core.mjs';
+import '../.MOP/scripts/mop-core.mjs';

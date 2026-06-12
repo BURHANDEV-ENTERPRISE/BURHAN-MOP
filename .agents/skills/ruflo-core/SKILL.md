@@ -1,13 +1,13 @@
 ---
 name: ruflo-core
-description: Use this when working with the MemoryOfPlanet Ruflo core, Claude Flow configuration, MCP server setup, swarm routing, hooks, or cross-provider agent instructions.
+description: Use this when working with the MOP Ruflo core, Claude Flow configuration, MCP server setup, swarm routing, hooks, or cross-provider agent instructions.
 ---
 
 # Ruflo Core Skill
 
 ## Goal
 
-Keep the MemoryOfPlanet Ruflo core portable across Claude Code, Codex,
+Keep the MOP Ruflo core portable across Claude Code, Codex,
 ChatGPT coding surfaces, Gemini CLI, and Antigravity.
 
 ## Instructions
@@ -32,4 +32,3 @@ ChatGPT coding surfaces, Gemini CLI, and Antigravity.
 - Do not assume MCP is available; degrade to filesystem and shell inspection.
 - Do not modify runtime state, logs, sessions, or memory data unless the user
   specifically asks.
-

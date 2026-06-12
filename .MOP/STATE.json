@@ -58,7 +58,7 @@
   "workflow": {
     "enabled": true,
     "name": "MOP Workflow",
-    "style": "BMAD-inspired, MemoryOfPlanet-native",
+    "style": "BMAD-inspired, MOP-native",
     "currentPhase": null,
     "phaseOrder": [
       "idea",
@@ -202,8 +202,8 @@
   },
   "artifacts": {
     "enabled": true,
-    "directory": ".memoryofplanet/artifacts",
-    "templateDirectory": ".memoryofplanet/templates/artifacts",
+    "directory": ".MOP/artifacts",
+    "templateDirectory": ".MOP/templates/artifacts",
     "layout": "category/artifact-slug/type.md",
     "defaultCategory": "general",
     "folderByType": {
@@ -243,9 +243,9 @@
       "member"
     ],
     "files": {
-      "defaults": ".memoryofplanet/config/defaults.json",
-      "team": ".memoryofplanet/config/team.json",
-      "memberPattern": ".memoryofplanet/config/members/<codename>.json"
+      "defaults": ".MOP/config/defaults.json",
+      "team": ".MOP/config/team.json",
+      "memberPattern": ".MOP/config/members/<codename>.json"
     },
     "rules": [
       "Defaults define safe project behavior.",
@@ -276,7 +276,7 @@
       "config",
       "scripts",
       ".github",
-      ".memoryofplanet",
+      ".MOP",
       ".agents",
       ".claude",
       ".codex",
@@ -335,10 +335,10 @@
     "enabled": true,
     "packageName": "burhan-mop",
     "command": "npx burhan-mop install",
-    "entrypoint": ".memoryofplanet/scripts/burhan-mop.mjs",
+    "entrypoint": ".MOP/scripts/burhan-mop.mjs",
     "installTargets": [
       "provider entrypoints",
-      "MemoryOfPlanet state",
+      "MOP state",
       "skills",
       "workflow config",
       "artifact templates"
@@ -511,7 +511,7 @@
       "role": "memory",
       "title": "Memory Keeper",
       "kind": "memory",
-      "purpose": "Save, recall, summarize, search, and clean long-term MemoryOfPlanet records."
+      "purpose": "Save, recall, summarize, search, and clean long-term MOP records."
     },
     {
       "role": "ux",
@@ -555,7 +555,7 @@
       "at": "2026-06-11T00:00:00.000Z",
       "actor": "system",
       "kind": "state-created",
-      "summary": "MemoryOfPlanet state scaffold created; setup pending."
+      "summary": "MOP state scaffold created; setup pending."
     }
   ]
 }

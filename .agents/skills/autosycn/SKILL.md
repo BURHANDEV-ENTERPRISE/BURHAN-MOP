@@ -1,11 +1,11 @@
 ---
 name: autosycn
-description: Use this after every meaningful MemoryOfPlanet state or file change to save memory, commit as the real active user, push to the correct branch, and merge to main when allowed.
+description: Use this after every meaningful MOP state or file change to save memory, commit as the real active user, push to the correct branch, and merge to main when allowed.
 ---
 
 # Autosycn
 
-Autosycn is MemoryOfPlanet's identity-safe autosync skill. The name keeps the
+Autosycn is MOP's identity-safe autosync skill. The name keeps the
 project spelling `autosycn`, but the behavior is autosync.
 
 ## Required Identity Rule
@@ -14,7 +14,7 @@ Never let commits fall back to the AI tool identity. Before pushing, the helper
 must have a user Git identity:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email "<github-verified-email>" --github-username "<github-login>"
+node .MOP/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email "<github-verified-email>" --github-username "<github-login>"
 ```
 
 Use a GitHub-verified email or the user's GitHub noreply email. The branch name
@@ -27,27 +27,27 @@ key used for `git push`.
 First-time git setup:
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs init --actor <owner-codename> --url "<github-url>"
+node .MOP/scripts/mop-autosycn.mjs init --actor <owner-codename> --url "<github-url>"
 ```
 
 Before starting new work, after login, or after a long break:
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor <codename>
+node .MOP/scripts/mop-autosycn.mjs preflight --actor <codename>
 ```
 
 After a state or file change:
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
+node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
 ```
 
 Manual steps:
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs memory --actor <codename> --summary "<what changed>"
-node .memoryofplanet/scripts/mop-autosycn.mjs push --actor <codename> --reason "<what changed>"
-node .memoryofplanet/scripts/mop-autosycn.mjs merge --actor <codename> --from <codename> --reason "Merge dev/<codename>: <what changed>"
+node .MOP/scripts/mop-autosycn.mjs memory --actor <codename> --summary "<what changed>"
+node .MOP/scripts/mop-autosycn.mjs push --actor <codename> --reason "<what changed>"
+node .MOP/scripts/mop-autosycn.mjs merge --actor <codename> --from <codename> --reason "Merge dev/<codename>: <what changed>"
 ```
 
 ## Guarantees
@@ -61,7 +61,7 @@ node .memoryofplanet/scripts/mop-autosycn.mjs merge --actor <codename> --from <c
 - BURHAN-MOP reviews the pushed branch and merges to `main` only when checks
   pass.
 - Sets `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and
-  `GIT_COMMITTER_EMAIL` from MemoryOfPlanet member state.
+  `GIT_COMMITTER_EMAIL` from MOP member state.
 - Sets local `git config user.name` and `user.email` before commit/merge.
 - Refuses to push when the user's Git email is missing.
 - If a GitHub username is configured, refuses to push unless `gh api user`

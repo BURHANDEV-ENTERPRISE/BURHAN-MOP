@@ -76,9 +76,9 @@ function deepMerge(base, override) {
 
 function mergedConfig(state, actor = '') {
   const files = state.customization?.files || {};
-  const defaults = readJson(join(rootDir, files.defaults || '.memoryofplanet/config/defaults.json'));
-  const team = readJson(join(rootDir, files.team || '.memoryofplanet/config/team.json'));
-  const memberPattern = files.memberPattern || '.memoryofplanet/config/members/<codename>.json';
+  const defaults = readJson(join(rootDir, files.defaults || '.MOP/config/defaults.json'));
+  const team = readJson(join(rootDir, files.team || '.MOP/config/team.json'));
+  const memberPattern = files.memberPattern || '.MOP/config/members/<codename>.json';
   const memberPath = actor ? join(rootDir, memberPattern.replace('<codename>', slug(actor))) : '';
   const member = memberPath ? readJson(memberPath) : {};
   return deepMerge(deepMerge(defaults, team), member);
@@ -129,7 +129,7 @@ function status(args) {
     nextPhase,
     customization: config.workflow || {},
     artifacts: {
-      directory: state.artifacts?.directory || '.memoryofplanet/artifacts',
+      directory: state.artifacts?.directory || '.MOP/artifacts',
       layout: state.artifacts?.layout || 'category/artifact-slug/type.md',
       folderByType: state.artifacts?.folderByType || {}
     },
@@ -156,10 +156,10 @@ function help(args) {
     partyRoles: phase?.partyRoles || [],
     nextArtifact,
     nextArtifactCategory: nextCategory,
-    nextArtifactPathPattern: `${state.artifacts?.directory || '.memoryofplanet/artifacts'}/${nextCategory}/<artifact-slug>/${nextArtifact}.md`,
-    nextCommand: `node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor ${actor || '<codename>'} --type ${nextArtifact} --title "<title>"`,
+    nextArtifactPathPattern: `${state.artifacts?.directory || '.MOP/artifacts'}/${nextCategory}/<artifact-slug>/${nextArtifact}.md`,
+    nextCommand: `node .MOP/scripts/mop-workflow.mjs artifact create --actor ${actor || '<codename>'} --type ${nextArtifact} --title "<title>"`,
     readinessRequired,
-    readinessCommand: `node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor ${actor || '<codename>'} --task "<task>"`,
+    readinessCommand: `node .MOP/scripts/mop-workflow.mjs gate readiness --actor ${actor || '<codename>'} --task "<task>"`,
     nextPhase: nextPhase?.id || null
   }, null, 2));
 }
@@ -196,8 +196,8 @@ function artifactCreate(args) {
   const title = String(args.title || type);
   const artifactSlug = slug(args.slug || title || type);
   const category = artifactCategoryFor(state, args, type);
-  const artifactRoot = join(rootDir, state.artifacts?.directory || '.memoryofplanet/artifacts', category, artifactSlug);
-  const templatePath = join(rootDir, state.artifacts?.templateDirectory || '.memoryofplanet/templates/artifacts', `${type}.md`);
+  const artifactRoot = join(rootDir, state.artifacts?.directory || '.MOP/artifacts', category, artifactSlug);
+  const templatePath = join(rootDir, state.artifacts?.templateDirectory || '.MOP/templates/artifacts', `${type}.md`);
   const template = existsSync(templatePath)
     ? readFileSync(templatePath, 'utf8')
     : `# {{title}}\n\n## Notes\n\n`;
@@ -330,14 +330,14 @@ function main() {
   if (command === 'config' && subcommand === 'show') return configShow(args);
 
   console.log(`Usage:
-  node .memoryofplanet/scripts/mop-workflow.mjs status [--actor CODE] [--task TEXT]
-  node .memoryofplanet/scripts/mop-workflow.mjs help --actor CODE --task "what user asked"
-  node .memoryofplanet/scripts/mop-workflow.mjs next --actor CODE --task "what user asked"
-  node .memoryofplanet/scripts/mop-workflow.mjs phase set --actor CODE --phase prd
-  node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor CODE --type prd --title "Title" [--category plan] [--dry-run]
-  node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor CODE --task "task" [--artifact path]
-  node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor CODE --target "plan or file" [--write]
-  node .memoryofplanet/scripts/mop-workflow.mjs config show [--actor CODE]`);
+  node .MOP/scripts/mop-workflow.mjs status [--actor CODE] [--task TEXT]
+  node .MOP/scripts/mop-workflow.mjs help --actor CODE --task "what user asked"
+  node .MOP/scripts/mop-workflow.mjs next --actor CODE --task "what user asked"
+  node .MOP/scripts/mop-workflow.mjs phase set --actor CODE --phase prd
+  node .MOP/scripts/mop-workflow.mjs artifact create --actor CODE --type prd --title "Title" [--category plan] [--dry-run]
+  node .MOP/scripts/mop-workflow.mjs gate readiness --actor CODE --task "task" [--artifact path]
+  node .MOP/scripts/mop-workflow.mjs review adversarial --actor CODE --target "plan or file" [--write]
+  node .MOP/scripts/mop-workflow.mjs config show [--actor CODE]`);
 }
 
 try {

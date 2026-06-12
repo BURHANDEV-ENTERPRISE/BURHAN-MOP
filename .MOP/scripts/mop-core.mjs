@@ -93,7 +93,7 @@ function requireActiveAgent(state, actor, role = 'core', title = 'Core Agent') {
   throw new Error([
     `Agent diperlukan sebelum sambung kerja untuk ${actor}.`,
     `Task ini perlukan ${title}. Agent ini belum ada nama lagi atau belum dipilih.`,
-    `Jalankan: node .memoryofplanet/scripts/mop-core.mjs agent activate --actor ${actor} --role ${role} --title "${title}" --name "<agent-name>"`
+    `Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${actor} --role ${role} --title "${title}" --name "<agent-name>"`
   ].join(' '));
 }
 
@@ -345,10 +345,10 @@ function inferAgentRoute(state, taskText) {
 function setup(args) {
   const state = readState();
   if (state.initialized) {
-    throw new Error('MemoryOfPlanet already initialized.');
+    throw new Error('MOP already initialized.');
   }
 
-  const folderDefault = rootDir.split(/[\\/]/).filter(Boolean).pop() || 'MemoryOfPlanet';
+  const folderDefault = rootDir.split(/[\\/]/).filter(Boolean).pop() || 'MOP';
   const projectName = String(args['project-name'] || folderDefault);
   const displayName = requireArg(args, 'name');
   const codename = slug(requireArg(args, 'codename'));
@@ -411,7 +411,7 @@ function setup(args) {
   };
   appendLedger(state, codename, 'setup', `Initialized ${projectName} in ${mode} mode.`);
   writeState(state);
-  console.log(`MemoryOfPlanet initialized. Owner ${displayName} (${codename}) is active.`);
+  console.log(`MOP initialized. Owner ${displayName} (${codename}) is active.`);
 }
 
 function login(args) {
@@ -429,13 +429,13 @@ function login(args) {
   writeState(state);
   console.log(`Active member: ${codename}`);
   if (!activeAgentFor(state, codename) && state.agentPolicy?.requiredAfterAuth !== false) {
-    console.log(`Agent diperlukan. Jalankan: node .memoryofplanet/scripts/mop-core.mjs agent activate --actor ${codename} --role ${state.agentPolicy?.defaultRole || 'core'} --title "${state.agentPolicy?.defaultTitle || 'Core Agent'}" --name "<agent-name>"`);
+    console.log(`Agent diperlukan. Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${codename} --role ${state.agentPolicy?.defaultRole || 'core'} --title "${state.agentPolicy?.defaultTitle || 'Core Agent'}" --name "<agent-name>"`);
   }
 }
 
 function agentActivate(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
 
@@ -472,7 +472,7 @@ function agentActivate(args) {
 
 function agentUse(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
   const name = requireArg(args, 'name').trim();
@@ -521,7 +521,7 @@ function agentRequire(args) {
 
 function agentRoute(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   if (state.agentRouter?.enabled === false) throw new Error('Agent Router is disabled.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
@@ -567,7 +567,7 @@ function agentRoute(args) {
       response.nextAction = 'name-required-party-agents';
       response.message = 'Party mode diperlukan, tetapi ada agent terlibat yang belum dinamakan.';
       response.missingAgentCommands = missingPartyAgents.map((item) => (
-        `node .memoryofplanet/scripts/mop-core.mjs agent activate --actor ${actor} --role ${item.role} --title "${item.title}" --name "<agent-name>"`
+        `node .MOP/scripts/mop-core.mjs agent activate --actor ${actor} --role ${item.role} --title "${item.title}" --name "<agent-name>"`
       ));
     } else {
       response.nextAction = route.needsClarification ? 'ask-clarifying-questions' : 'proceed-with-agent';
@@ -576,7 +576,7 @@ function agentRoute(args) {
     response.nextAction = 'name-required-agent';
     response.message = `Task ini perlukan ${route.primaryTitle}. Agent ini belum ada nama lagi atau belum dipilih.`;
     response.ask = `Beri nama untuk ${route.primaryTitle} kamu:`;
-    response.command = `node .memoryofplanet/scripts/mop-core.mjs agent activate --actor ${actor} --role ${route.primaryRole} --title "${route.primaryTitle}" --name "<agent-name>"`;
+    response.command = `node .MOP/scripts/mop-core.mjs agent activate --actor ${actor} --role ${route.primaryRole} --title "${route.primaryTitle}" --name "<agent-name>"`;
     if (route.needsClarification) response.afterNaming = route.questions;
   }
 
@@ -593,7 +593,7 @@ function agentList() {
 
 function memberGitIdentity(args) {
   const state = readState();
-  if (!state.initialized) throw new Error('MemoryOfPlanet is not initialized.');
+  if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   const member = state.members?.[actor];
   if (!member) throw new Error('Unknown actor.');
@@ -651,7 +651,7 @@ function validate() {
     }
   }
   for (const type of state.artifacts?.types || []) {
-    const templatePath = join(rootDir, state.artifacts?.templateDirectory || '.memoryofplanet/templates/artifacts', `${type}.md`);
+    const templatePath = join(rootDir, state.artifacts?.templateDirectory || '.MOP/templates/artifacts', `${type}.md`);
     if (!existsSync(templatePath)) errors.push(`artifact template missing: ${templatePath}`);
     const folder = state.artifacts?.folderByType?.[type];
     if (state.artifacts?.folderByType && (!folder || typeof folder !== 'string')) {
@@ -684,7 +684,7 @@ function validate() {
     process.exitCode = 1;
     return;
   }
-  console.log('MemoryOfPlanet state OK.');
+  console.log('MOP state OK.');
 }
 
 function status() {
@@ -753,17 +753,17 @@ function main() {
   if (command === 'agent' && subcommand === 'list') return agentList();
 
   console.log(`Usage:
-  node .memoryofplanet/scripts/mop-core.mjs status
-  node .memoryofplanet/scripts/mop-core.mjs validate
-  node .memoryofplanet/scripts/mop-core.mjs setup --project-name NAME --name DISPLAY --codename CODE --password PASS --mode solo|team --conversation-language LANG --coding-language LANG --git-email EMAIL [--git-name NAME] [--github-username USER] [--github-url URL]
-  node .memoryofplanet/scripts/mop-core.mjs login --codename CODE --password PASS
-  node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor CODE --name NAME --email EMAIL [--github-username USER]
-  node .memoryofplanet/scripts/mop-core.mjs agent activate --actor CODE --role ROLE --title TITLE --name NAME
-  node .memoryofplanet/scripts/mop-core.mjs agent use --actor CODE --name NAME
-  node .memoryofplanet/scripts/mop-core.mjs agent current --actor CODE
-  node .memoryofplanet/scripts/mop-core.mjs agent require --actor CODE [--role ROLE] [--title TITLE]
-  node .memoryofplanet/scripts/mop-core.mjs agent route --actor CODE --task "task text"
-  node .memoryofplanet/scripts/mop-core.mjs agent list`);
+  node .MOP/scripts/mop-core.mjs status
+  node .MOP/scripts/mop-core.mjs validate
+  node .MOP/scripts/mop-core.mjs setup --project-name NAME --name DISPLAY --codename CODE --password PASS --mode solo|team --conversation-language LANG --coding-language LANG --git-email EMAIL [--git-name NAME] [--github-username USER] [--github-url URL]
+  node .MOP/scripts/mop-core.mjs login --codename CODE --password PASS
+  node .MOP/scripts/mop-core.mjs member git-identity --actor CODE --name NAME --email EMAIL [--github-username USER]
+  node .MOP/scripts/mop-core.mjs agent activate --actor CODE --role ROLE --title TITLE --name NAME
+  node .MOP/scripts/mop-core.mjs agent use --actor CODE --name NAME
+  node .MOP/scripts/mop-core.mjs agent current --actor CODE
+  node .MOP/scripts/mop-core.mjs agent require --actor CODE [--role ROLE] [--title TITLE]
+  node .MOP/scripts/mop-core.mjs agent route --actor CODE --task "task text"
+  node .MOP/scripts/mop-core.mjs agent list`);
 }
 
 try {

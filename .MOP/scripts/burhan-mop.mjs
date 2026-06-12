@@ -41,7 +41,7 @@ function install(args) {
     'AGENTS.md',
     'CLAUDE.md',
     'GEMINI.md',
-    '.memoryofplanet',
+    '.MOP',
     '.agents',
     '.claude',
     '.claude-flow',
@@ -63,7 +63,7 @@ function install(args) {
     next: [
       'Run /mop-setup in the target project.',
       'For team mode, initialize autosycn after setup.',
-      'Use: node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "lepas ni buat apa?"'
+      'Use: node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "lepas ni buat apa?"'
     ]
   }, null, 2));
 }
@@ -73,10 +73,10 @@ function doctor() {
     'AGENTS.md',
     'CLAUDE.md',
     'GEMINI.md',
-    '.memoryofplanet/STATE.json',
-    '.memoryofplanet/PROTOCOL.md',
-    '.memoryofplanet/scripts/mop-core.mjs',
-    '.memoryofplanet/scripts/mop-workflow.mjs',
+    '.MOP/STATE.json',
+    '.MOP/PROTOCOL.md',
+    '.MOP/scripts/mop-core.mjs',
+    '.MOP/scripts/mop-workflow.mjs',
     '.agents/skills/mop-help/SKILL.md'
   ];
   const results = required.map((entry) => {

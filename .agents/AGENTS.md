@@ -1,4 +1,4 @@
-# MemoryOfPlanet Core - Antigravity Instructions
+# MOP Core - Antigravity Instructions
 
 This is the Antigravity managed-agent entry point. The provider-neutral project
 rules are in the root `AGENTS.md`; apply those rules first when the root is
@@ -6,8 +6,8 @@ available in the environment.
 
 ## Authentication Gate
 
-Before doing anything, read `.memoryofplanet/STATE.json` and follow
-`.memoryofplanet/PROTOCOL.md`.
+Before doing anything, read `.MOP/STATE.json` and follow
+`.MOP/PROTOCOL.md`.
 
 - If setup is pending, run only the setup wizard.
 - If login is required, ask only for codename and password.
@@ -17,7 +17,7 @@ Before doing anything, read `.memoryofplanet/STATE.json` and follow
 - If the router says clarification is needed, ask the clarifying questions
   before implementation.
 - If the router activates Party Mode, show visible agent-to-agent dialogue using
-  the exact format in `.memoryofplanet/PROTOCOL.md`, with `PARTY MODE` shown in
+  the exact format in `.MOP/PROTOCOL.md`, with `PARTY MODE` shown in
   large uppercase before the dialogue. Party Mode normally uses at least 3
   agents and prefers 4 when relevant roles exist.
 - For complex work or "what next?" questions, use MOP Workflow:

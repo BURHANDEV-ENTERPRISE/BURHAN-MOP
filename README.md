@@ -1,7 +1,7 @@
 <h1 align="center">BURHAN-MOP</h1>
 
 <p align="center">
-  <strong>MemoryOfPlanet portable AI MemoryCore for Claude, Codex / ChatGPT, Gemini, and Antigravity.</strong>
+  <strong>MOP portable AI MemoryCore for Claude, Codex / ChatGPT, Gemini, and Antigravity.</strong>
 </p>
 
 <p align="center">
@@ -72,7 +72,7 @@
 
 ## What is BURHAN-MOP?
 
-BURHAN-MOP is a portable MemoryOfPlanet core for AI-assisted software projects.
+BURHAN-MOP is a portable MOP (Memory of Planet) core for AI-assisted software projects.
 It gives AI coding agents a shared project memory, an authentication gate, named
 agent identities, workflow stages, artifact output, autosync rules, and
 deployment setup guidance.
@@ -85,11 +85,11 @@ planned before coding, and how work should be saved.
 
 | Area | What BURHAN-MOP provides |
 | --- | --- |
-| Memory | Durable `.memoryofplanet/STATE.json` plus protocol instructions. |
+| Memory | Durable `.MOP/STATE.json` plus protocol instructions. |
 | Security | First-action authentication gate with scrypt password verification. |
 | Agents | Named agents with ownership rules and task routing. |
 | Workflow | BMAD-inspired MOP workflow from idea to release. |
-| Artifacts | Organized outputs under `.memoryofplanet/artifacts/<category>/<slug>/<type>.md`. |
+| Artifacts | Organized outputs under `.MOP/artifacts/<category>/<slug>/<type>.md`. |
 | Git | Identity-safe `autosycn` flow using real user Git identity. |
 | Deploy | Opt-in auto-deploy setup for GitHub, Docker, and Vercel. |
 | Providers | Claude, Codex / ChatGPT coding agents, Gemini CLI, and Antigravity entrypoints. |
@@ -100,7 +100,7 @@ planned before coding, and how work should be saved.
 
 BURHAN-MOP is published on npm as
 [`burhan-mop`](https://www.npmjs.com/package/burhan-mop). Run this from the
-project root where you want to install the MemoryOfPlanet core:
+project root where you want to install the MOP core:
 
 ```bash
 npx burhan-mop install
@@ -136,13 +136,13 @@ npx burhan-mop doctor
 Or locally inside the project:
 
 ```bash
-node .memoryofplanet/scripts/burhan-mop.mjs doctor
+node .MOP/scripts/burhan-mop.mjs doctor
 ```
 
 ## Setup Wizard
 
 After installing the core into a project, start a new AI chat inside that
-workspace. The first instruction is always to read `.memoryofplanet/STATE.json`.
+workspace. The first instruction is always to read `.MOP/STATE.json`.
 
 If `initialized` is `false`, the AI must only run setup.
 
@@ -164,7 +164,7 @@ The setup wizard asks, in order:
 CLI setup example:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs setup ^
+node .MOP/scripts/mop-core.mjs setup ^
   --project-name "My Project" ^
   --name "MoonWiRaja" ^
   --codename moon ^
@@ -186,13 +186,13 @@ node .memoryofplanet/scripts/mop-core.mjs setup ^
 The AI must read:
 
 ```text
-.memoryofplanet/STATE.json
+.MOP/STATE.json
 ```
 
 Then it follows:
 
 ```text
-.memoryofplanet/PROTOCOL.md
+.MOP/PROTOCOL.md
 ```
 
 If the core is initialized and no member is active, the AI asks only:
@@ -209,13 +209,13 @@ authentication gate passes.
 The AI must route the task to a primary agent:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent route --actor <codename> --task "<user task>"
+node .MOP/scripts/mop-core.mjs agent route --actor <codename> --task "<user task>"
 ```
 
 If an agent role is needed for the first time, the user names that agent:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent activate --actor <codename> --role architect --title "System Architect" --name "Nimo"
+node .MOP/scripts/mop-core.mjs agent activate --actor <codename> --role architect --title "System Architect" --name "Nimo"
 ```
 
 ## Agents and Party Mode
@@ -263,7 +263,7 @@ agent: Pixel (frontend) to agent: Nimo (architect)
 
 ## MOP Workflow
 
-MOP Workflow is BMAD-inspired, but adapted for MemoryOfPlanet and multi-agent
+MOP Workflow is BMAD-inspired, but adapted for MOP and multi-agent
 use.
 
 ```text
@@ -273,7 +273,7 @@ idea -> brief -> prd -> ux-spec -> architecture -> story -> readiness -> impleme
 Use the workflow helper:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "what should we do next?"
+node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "what should we do next?"
 ```
 
 It returns:
@@ -288,13 +288,13 @@ It returns:
 Before coding:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<task>"
+node .MOP/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<task>"
 ```
 
 For risky or important work:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan or file>"
+node .MOP/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan or file>"
 ```
 
 ## Artifacts
@@ -304,7 +304,7 @@ Artifacts keep planning output organized and prevent root clutter.
 Output layout:
 
 ```text
-.memoryofplanet/artifacts/<category>/<artifact-slug>/<type>.md
+.MOP/artifacts/<category>/<artifact-slug>/<type>.md
 ```
 
 Default categories:
@@ -323,13 +323,13 @@ Default categories:
 Create an artifact:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System"
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System"
 ```
 
 Preview without writing:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System" --dry-run
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System" --dry-run
 ```
 
 ## Project Root Policy
@@ -388,25 +388,25 @@ branch, and lets BURHAN-MOP review merges.
 ### Required user Git identity
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor moon --name "MoonWiRaja" --email "168633207+MoonWIRaja@users.noreply.github.com" --github-username "MoonWIRaja"
+node .MOP/scripts/mop-core.mjs member git-identity --actor moon --name "MoonWiRaja" --email "168633207+MoonWIRaja@users.noreply.github.com" --github-username "MoonWIRaja"
 ```
 
 ### Initialize autosycn
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs init --actor moon --url "https://github.com/owner/repo.git"
+node .MOP/scripts/mop-autosycn.mjs init --actor moon --url "https://github.com/owner/repo.git"
 ```
 
 ### Before work
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor moon
+node .MOP/scripts/mop-autosycn.mjs preflight --actor moon
 ```
 
 ### After changes
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs run --actor moon --reason "Implemented feature"
+node .MOP/scripts/mop-autosycn.mjs run --actor moon --reason "Implemented feature"
 ```
 
 Important: GitHub commit attribution comes from the commit email. GitHub push
@@ -451,21 +451,21 @@ npx burhan-mop package
 ### Core
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs status
-node .memoryofplanet/scripts/mop-core.mjs validate
-node .memoryofplanet/scripts/mop-core.mjs login --codename moon --password "<password>"
-node .memoryofplanet/scripts/mop-core.mjs agent route --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-core.mjs agent list
+node .MOP/scripts/mop-core.mjs status
+node .MOP/scripts/mop-core.mjs validate
+node .MOP/scripts/mop-core.mjs login --codename moon --password "<password>"
+node .MOP/scripts/mop-core.mjs agent route --actor moon --task "<task>"
+node .MOP/scripts/mop-core.mjs agent list
 ```
 
 ### Workflow
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs status --actor moon
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Title"
-node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor moon --target "<target>"
+node .MOP/scripts/mop-workflow.mjs status --actor moon
+node .MOP/scripts/mop-workflow.mjs help --actor moon --task "<task>"
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Title"
+node .MOP/scripts/mop-workflow.mjs gate readiness --actor moon --task "<task>"
+node .MOP/scripts/mop-workflow.mjs review adversarial --actor moon --target "<target>"
 ```
 
 ## Provider Support
@@ -485,7 +485,8 @@ Current public package:
 | Field | Value |
 | --- | --- |
 | Package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
-| Current release | `0.1.0` |
+| Source version | `0.1.1` |
+| Latest npm release | See the npm badge above |
 | Install command | `npx burhan-mop install` |
 
 npm versions are immutable. Before publishing the next release, update
@@ -593,7 +594,7 @@ SSH key authentication.
   <summary>CodeQL says no source code was seen</summary>
 
 Keep the visible `bin/` entrypoints. They allow CodeQL default setup to detect
-JavaScript source while the full implementation stays under `.memoryofplanet/`.
+JavaScript source while the full implementation stays under `.MOP/`.
 </details>
 
 ## Official npm References
@@ -608,7 +609,7 @@ JavaScript source while the full implementation stays under `.memoryofplanet/`.
 
 ## Apa itu BURHAN-MOP?
 
-BURHAN-MOP ialah MemoryOfPlanet core yang portable untuk projek software yang
+BURHAN-MOP ialah MOP (Memory of Planet) core yang portable untuk projek software yang
 dibantu AI. Ia memberi AI coding agent satu memory project yang konsisten,
 auth gate, identiti agent bernama, workflow stage, artifact output, autosycn,
 dan panduan setup deploy.
@@ -621,11 +622,11 @@ sebelum coding, dan bagaimana kerja perlu disimpan.
 
 | Bahagian | Apa BURHAN-MOP buat |
 | --- | --- |
-| Memory | State tahan lama dalam `.memoryofplanet/STATE.json` dan protocol rasmi. |
+| Memory | State tahan lama dalam `.MOP/STATE.json` dan protocol rasmi. |
 | Security | First-action authentication gate dengan scrypt password verification. |
 | Agents | Agent bernama, ownership rule, dan routing ikut task. |
 | Workflow | MOP workflow yang diinspirasi BMAD dari idea sampai release. |
-| Artifacts | Output tersusun dalam `.memoryofplanet/artifacts/<category>/<slug>/<type>.md`. |
+| Artifacts | Output tersusun dalam `.MOP/artifacts/<category>/<slug>/<type>.md`. |
 | Git | `autosycn` yang commit guna identiti Git user sebenar. |
 | Deploy | Auto-deploy opt-in untuk GitHub, Docker, dan Vercel. |
 | Providers | Claude, Codex / ChatGPT coding agents, Gemini CLI, dan Antigravity. |
@@ -636,7 +637,7 @@ sebelum coding, dan bagaimana kerja perlu disimpan.
 
 BURHAN-MOP sudah dipublish ke npm sebagai
 [`burhan-mop`](https://www.npmjs.com/package/burhan-mop). Jalankan dari root
-project yang mahu dipasang MemoryOfPlanet core:
+project yang mahu dipasang MOP core:
 
 ```bash
 npx burhan-mop install
@@ -672,13 +673,13 @@ npx burhan-mop doctor
 Atau secara local dalam project:
 
 ```bash
-node .memoryofplanet/scripts/burhan-mop.mjs doctor
+node .MOP/scripts/burhan-mop.mjs doctor
 ```
 
 ## Setup Wizard BM
 
 Selepas install core ke dalam project, buka chat AI baru dalam workspace itu.
-Arahan pertama AI ialah baca `.memoryofplanet/STATE.json`.
+Arahan pertama AI ialah baca `.MOP/STATE.json`.
 
 Jika `initialized` ialah `false`, AI hanya boleh jalankan setup.
 
@@ -700,7 +701,7 @@ Setup wizard akan tanya ikut urutan ini:
 Contoh setup CLI:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs setup ^
+node .MOP/scripts/mop-core.mjs setup ^
   --project-name "My Project" ^
   --name "MoonWiRaja" ^
   --codename moon ^
@@ -722,13 +723,13 @@ node .memoryofplanet/scripts/mop-core.mjs setup ^
 AI mesti baca:
 
 ```text
-.memoryofplanet/STATE.json
+.MOP/STATE.json
 ```
 
 Kemudian ikut:
 
 ```text
-.memoryofplanet/PROTOCOL.md
+.MOP/PROTOCOL.md
 ```
 
 Jika core sudah setup tetapi tiada active member, AI hanya tanya:
@@ -745,13 +746,13 @@ auth gate lulus.
 AI mesti route task kepada primary agent:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent route --actor <codename> --task "<task user>"
+node .MOP/scripts/mop-core.mjs agent route --actor <codename> --task "<task user>"
 ```
 
 Jika role agent belum ada nama, user perlu beri nama:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent activate --actor <codename> --role architect --title "System Architect" --name "Nimo"
+node .MOP/scripts/mop-core.mjs agent activate --actor <codename> --role architect --title "System Architect" --name "Nimo"
 ```
 
 ## Agent dan Party Mode
@@ -799,7 +800,7 @@ agent: Pixel (frontend) to agent: Nimo (architect)
 
 ## MOP Workflow BM
 
-MOP Workflow diinspirasi BMAD, tetapi disesuaikan untuk MemoryOfPlanet dan
+MOP Workflow diinspirasi BMAD, tetapi disesuaikan untuk MOP dan
 multi-agent.
 
 ```text
@@ -809,7 +810,7 @@ idea -> brief -> prd -> ux-spec -> architecture -> story -> readiness -> impleme
 Guna workflow helper:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "lepas ni buat apa?"
+node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "lepas ni buat apa?"
 ```
 
 Ia akan pulangkan:
@@ -824,13 +825,13 @@ Ia akan pulangkan:
 Sebelum coding:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<task>"
+node .MOP/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<task>"
 ```
 
 Untuk kerja penting atau risky:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan atau file>"
+node .MOP/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan atau file>"
 ```
 
 ## Artifacts BM
@@ -840,7 +841,7 @@ Artifacts menyimpan output planning supaya tidak bersepah di root.
 Layout output:
 
 ```text
-.memoryofplanet/artifacts/<category>/<artifact-slug>/<type>.md
+.MOP/artifacts/<category>/<artifact-slug>/<type>.md
 ```
 
 Kategori default:
@@ -859,13 +860,13 @@ Kategori default:
 Buat artifact:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System"
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System"
 ```
 
 Preview tanpa tulis file:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System" --dry-run
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Portfolio System" --dry-run
 ```
 
 ## Project Root Policy BM
@@ -924,25 +925,25 @@ dan biarkan BURHAN-MOP review merge.
 ### Identiti Git user wajib
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor moon --name "MoonWiRaja" --email "168633207+MoonWIRaja@users.noreply.github.com" --github-username "MoonWIRaja"
+node .MOP/scripts/mop-core.mjs member git-identity --actor moon --name "MoonWiRaja" --email "168633207+MoonWIRaja@users.noreply.github.com" --github-username "MoonWIRaja"
 ```
 
 ### Initialize autosycn
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs init --actor moon --url "https://github.com/owner/repo.git"
+node .MOP/scripts/mop-autosycn.mjs init --actor moon --url "https://github.com/owner/repo.git"
 ```
 
 ### Sebelum kerja
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor moon
+node .MOP/scripts/mop-autosycn.mjs preflight --actor moon
 ```
 
 ### Selepas perubahan
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs run --actor moon --reason "Implemented feature"
+node .MOP/scripts/mop-autosycn.mjs run --actor moon --reason "Implemented feature"
 ```
 
 Penting: GitHub commit attribution datang daripada commit email. GitHub push
@@ -987,21 +988,21 @@ npx burhan-mop package
 ### Core
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs status
-node .memoryofplanet/scripts/mop-core.mjs validate
-node .memoryofplanet/scripts/mop-core.mjs login --codename moon --password "<password>"
-node .memoryofplanet/scripts/mop-core.mjs agent route --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-core.mjs agent list
+node .MOP/scripts/mop-core.mjs status
+node .MOP/scripts/mop-core.mjs validate
+node .MOP/scripts/mop-core.mjs login --codename moon --password "<password>"
+node .MOP/scripts/mop-core.mjs agent route --actor moon --task "<task>"
+node .MOP/scripts/mop-core.mjs agent list
 ```
 
 ### Workflow
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs status --actor moon
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Title"
-node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor moon --task "<task>"
-node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor moon --target "<target>"
+node .MOP/scripts/mop-workflow.mjs status --actor moon
+node .MOP/scripts/mop-workflow.mjs help --actor moon --task "<task>"
+node .MOP/scripts/mop-workflow.mjs artifact create --actor moon --type prd --title "Title"
+node .MOP/scripts/mop-workflow.mjs gate readiness --actor moon --task "<task>"
+node .MOP/scripts/mop-workflow.mjs review adversarial --actor moon --target "<target>"
 ```
 
 ## Sokongan Provider
@@ -1021,7 +1022,8 @@ Package public semasa:
 | Field | Nilai |
 | --- | --- |
 | Package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
-| Release semasa | `0.1.0` |
+| Versi source | `0.1.1` |
+| Release npm terbaru | Lihat badge npm di atas |
 | Command install | `npx burhan-mop install` |
 
 Versi npm tidak boleh dipublish semula dengan nombor yang sama. Sebelum release
@@ -1131,7 +1133,7 @@ Credential Manager, atau SSH key.
 
 Kekalkan visible `bin/` entrypoints. Ia membantu CodeQL default setup detect
 JavaScript source sementara implementation penuh masih berada dalam
-`.memoryofplanet/`.
+`.MOP/`.
 </details>
 
 ## Rujukan Rasmi npm

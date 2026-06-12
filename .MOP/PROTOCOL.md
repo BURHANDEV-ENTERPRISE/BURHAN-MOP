@@ -1,15 +1,15 @@
-# MemoryOfPlanet Core Protocol
+# MOP Core Protocol
 
 This is the source of truth for setup, authentication, member state, and agent
-naming in MemoryOfPlanet.
+naming in MOP.
 
 ## First Action Gate
 
 Before any assistant answers questions or edits files in this core, read
-`.memoryofplanet/STATE.json`.
+`.MOP/STATE.json`.
 
 - If `initialized` is `false`, output:
-  `MemoryOfPlanet belum di-setup. Jalankan /mop-setup.`
+  `MOP belum di-setup. Jalankan /mop-setup.`
   Then run the setup wizard only.
 - If `initialized` is `true` and `activeMember` is empty, output:
   `Codename dan password.`
@@ -40,7 +40,7 @@ Use this order:
 After confirmation, run:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs setup --project-name "<name>" --name "<display>" --codename <codename> --password "<password>" --mode <solo|team> --conversation-language "<lang>" --coding-language "<lang>" --git-email "<github-verified-email>" [--git-name "<display>"] [--github-username "<github-login>"] [--github-url "<url>"] [--join-mode <mode>]
+node .MOP/scripts/mop-core.mjs setup --project-name "<name>" --name "<display>" --codename <codename> --password "<password>" --mode <solo|team> --conversation-language "<lang>" --coding-language "<lang>" --git-email "<github-verified-email>" [--git-name "<display>"] [--github-username "<github-login>"] [--github-url "<url>"] [--join-mode <mode>]
 ```
 
 ## Agent Naming Ceremony
@@ -69,7 +69,7 @@ only when their expertise is genuinely needed, with no fixed maximum.
 Use:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent route --actor <codename> --task "<user task>"
+node .MOP/scripts/mop-core.mjs agent route --actor <codename> --task "<user task>"
 ```
 
 Routing rules:
@@ -152,7 +152,7 @@ agent: <from-name> (<from-role>)
 
 ## MOP Workflow
 
-MOP Workflow is BMAD-inspired but MemoryOfPlanet-native. It is the default
+MOP Workflow is BMAD-inspired and MOP-native. It is the default
 structure for complex work:
 
 `idea -> brief -> prd -> ux-spec -> architecture -> story -> readiness -> implementation -> review -> release`
@@ -161,9 +161,9 @@ Use the workflow helper when the user asks what to do next, asks for a plan, or
 requests implementation:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "<user task>"
-node .memoryofplanet/scripts/mop-workflow.mjs next --actor <codename> --task "<user task>"
-node .memoryofplanet/scripts/mop-workflow.mjs status --actor <codename>
+node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<user task>"
+node .MOP/scripts/mop-workflow.mjs next --actor <codename> --task "<user task>"
+node .MOP/scripts/mop-workflow.mjs status --actor <codename>
 ```
 
 The workflow helper returns the suggested phase, lead agent role, party roles,
@@ -171,12 +171,12 @@ next artifact, and gate status. The primary agent still owns the answer.
 
 ## Artifacts
 
-Complex work should create durable artifacts under `.memoryofplanet/artifacts/`.
+Complex work should create durable artifacts under `.MOP/artifacts/`.
 Artifacts are grouped by category so planning, reviews, releases, and decisions
 do not mix together:
 
 ```text
-.memoryofplanet/artifacts/<category>/<artifact-slug>/<type>.md
+.MOP/artifacts/<category>/<artifact-slug>/<type>.md
 ```
 
 Default categories:
@@ -208,7 +208,7 @@ Available artifact types:
 Create artifacts with:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs artifact create --actor <codename> --type <type> --title "<title>"
+node .MOP/scripts/mop-workflow.mjs artifact create --actor <codename> --type <type> --title "<title>"
 ```
 
 Use `--category <name>` only when the default type category is not suitable.
@@ -232,14 +232,14 @@ for a monorepo or multiple apps.
 
 Customization is layered and non-bypassing:
 
-1. defaults: `.memoryofplanet/config/defaults.json`
-2. team: `.memoryofplanet/config/team.json`
-3. member: `.memoryofplanet/config/members/<codename>.json`
+1. defaults: `.MOP/config/defaults.json`
+2. team: `.MOP/config/team.json`
+3. member: `.MOP/config/members/<codename>.json`
 
 Show merged config with:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs config show --actor <codename>
+node .MOP/scripts/mop-workflow.mjs config show --actor <codename>
 ```
 
 Customization may tune workflow preferences, party mode verbosity, and preferred
@@ -251,7 +251,7 @@ BURHAN-MOP review.
 Before coding or making implementation changes, run:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<user task>" [--artifact <path>]
+node .MOP/scripts/mop-workflow.mjs gate readiness --actor <codename> --task "<user task>" [--artifact <path>]
 ```
 
 If status is not `ready`, ask clarification or update the required artifact
@@ -263,7 +263,7 @@ Use adversarial review before implementation for risky work, before merge, or
 when the user asks for review:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan, artifact, file, or task>"
+node .MOP/scripts/mop-workflow.mjs review adversarial --actor <codename> --target "<plan, artifact, file, or task>"
 ```
 
 Adversarial review must challenge assumptions, find failure modes, surface
@@ -300,10 +300,10 @@ npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
 Local equivalent:
 
 ```bash
-node .memoryofplanet/scripts/burhan-mop.mjs install --target <project-folder>
+node .MOP/scripts/burhan-mop.mjs install --target <project-folder>
 ```
 
-Installer copies provider entrypoints, MemoryOfPlanet state, skills, workflow
+Installer copies provider entrypoints, MOP state, skills, workflow
 config, and artifact templates. Existing files are skipped unless `--force` is
 used.
 
@@ -319,19 +319,19 @@ Then ask:
 Save the answer with:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent activate --actor <codename> --role <role> --title "<title>" --name "<agent-name>"
+node .MOP/scripts/mop-core.mjs agent activate --actor <codename> --role <role> --title "<title>" --name "<agent-name>"
 ```
 
 Check the current active agent with:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent current --actor <codename>
+node .MOP/scripts/mop-core.mjs agent current --actor <codename>
 ```
 
 Switch to an existing owned agent with:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent use --actor <codename> --name "<agent-name>"
+node .MOP/scripts/mop-core.mjs agent use --actor <codename> --name "<agent-name>"
 ```
 
 All durable memory and ledger entries must include the active agent when one is
@@ -346,7 +346,7 @@ available to the active member:
 3. Save the name with:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs agent activate --actor <codename> --role <role> --title "<title>" --name "<agent-name>"
+node .MOP/scripts/mop-core.mjs agent activate --actor <codename> --role <role> --title "<title>" --name "<agent-name>"
 ```
 
 ## Shared Agent Rule
@@ -366,15 +366,15 @@ changes. It is intentionally identity-safe.
 Before first push for a member, configure the real Git identity:
 
 ```bash
-node .memoryofplanet/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email "<github-verified-email>" --github-username "<github-login>"
+node .MOP/scripts/mop-core.mjs member git-identity --actor <codename> --name "<display name>" --email "<github-verified-email>" --github-username "<github-login>"
 ```
 
 Then run:
 
 ```bash
-node .memoryofplanet/scripts/mop-autosycn.mjs init --actor <owner-codename> --url "<github-url>"
-node .memoryofplanet/scripts/mop-autosycn.mjs preflight --actor <codename>
-node .memoryofplanet/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
+node .MOP/scripts/mop-autosycn.mjs init --actor <owner-codename> --url "<github-url>"
+node .MOP/scripts/mop-autosycn.mjs preflight --actor <codename>
+node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
 ```
 
 Autosycn must:
@@ -423,13 +423,13 @@ Only activate deployment after explicit confirmation.
 
 ## File Layout
 
-- `.memoryofplanet/STATE.json` - durable project/member/agent state.
-- `.memoryofplanet/PROTOCOL.md` - this protocol.
-- `.memoryofplanet/scripts/mop-core.mjs` - setup/login/agent helper.
-- `.memoryofplanet/scripts/mop-workflow.mjs` - workflow/help/artifact/readiness/review helper.
-- `.memoryofplanet/scripts/burhan-mop.mjs` - installer CLI for `npx burhan-mop install`.
-- `.memoryofplanet/scripts/mop-autosycn.mjs` - identity-safe autosycn helper.
-- `.memoryofplanet/scripts/mop-auto-deploy.mjs` - opt-in deployment helper.
+- `.MOP/STATE.json` - durable project/member/agent state.
+- `.MOP/PROTOCOL.md` - this protocol.
+- `.MOP/scripts/mop-core.mjs` - setup/login/agent helper.
+- `.MOP/scripts/mop-workflow.mjs` - workflow/help/artifact/readiness/review helper.
+- `.MOP/scripts/burhan-mop.mjs` - installer CLI for `npx burhan-mop install`.
+- `.MOP/scripts/mop-autosycn.mjs` - identity-safe autosycn helper.
+- `.MOP/scripts/mop-auto-deploy.mjs` - opt-in deployment helper.
 - `AGENTS.md` - Codex and provider-neutral entrypoint.
 - `CLAUDE.md` - Claude Code entrypoint.
 - `GEMINI.md` - Gemini CLI entrypoint.

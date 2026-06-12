@@ -1,4 +1,4 @@
-# Project-local Codex defaults for MemoryOfPlanet Core.
+# Project-local Codex defaults for MOP Core.
 
 project_doc_fallback_filenames = ["GEMINI.md", "CLAUDE.md"]
 project_doc_max_bytes = 65536

@@ -5,12 +5,12 @@ or asks which agent/workflow/artifact should be used.
 
 ## Behavior
 
-1. Read `.memoryofplanet/STATE.json`.
-2. Respect auth and Agent Router gates from `.memoryofplanet/PROTOCOL.md`.
+1. Read `.MOP/STATE.json`.
+2. Respect auth and Agent Router gates from `.MOP/PROTOCOL.md`.
 3. Run:
 
 ```bash
-node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "<user task>"
+node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<user task>"
 ```
 
 4. Explain the next step in the user's language.
@@ -25,7 +25,7 @@ node .memoryofplanet/scripts/mop-workflow.mjs help --actor <codename> --task "<u
 ## Rules
 
 - Do not invent a workflow phase if the helper returns one.
-- Keep artifacts under `.memoryofplanet/artifacts/<category>/<artifact-slug>/<type>.md`.
+- Keep artifacts under `.MOP/artifacts/<category>/<artifact-slug>/<type>.md`.
 - Treat the current workspace root as the project root. Do not suggest a nested
   project wrapper folder unless the user explicitly asks for a monorepo or
   multiple apps.
