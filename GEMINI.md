@@ -16,6 +16,11 @@ rules are imported below.
   example: `agent: <agent-name> (<agent-role>) to <user>`.
 - Save a one-line memory after meaningful work with
   `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<outcome>"`.
+- If `agent route` returns `nextAction: "name-required-party-agents"`, ask every
+  question in `missingAgentQuestions` and stop until those agents are named.
+- Before browser, scraping, extraction, click automation, login flow,
+  bot-detection, or form-filling work, run `mop-core.mjs browser preflight` and
+  follow its mode/question before doing browser work.
 - Autosycn member commits must use the active member GitHub account. MOP derives
   `ID+USERNAME@users.noreply.github.com` from `gh api user` by default and
   refuses mismatched GitHub accounts.

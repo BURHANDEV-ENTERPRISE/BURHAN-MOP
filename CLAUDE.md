@@ -23,6 +23,14 @@ follow `.MOP/PROTOCOL.md`.
   `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<one-line outcome>"`.
 - If the router marks the task as ambiguous, the named primary agent must ask
   clarifying questions before implementation.
+- If the router returns `nextAction: "name-required-party-agents"`, ask every
+  question in `missingAgentQuestions` and stop until those agents are named.
+- Before browser, scraping, extraction, click automation, login flow,
+  bot-detection, or form-filling work, run `mop-core.mjs browser preflight`. If
+  it reports Edge, Brave, or Opera, use browser-act `chrome-direct` mode and
+  guide the user to start remote debugging (`--remote-debugging-port`). If it
+  cannot detect a supported browser, ask which browser they use before doing
+  browser work.
 - If the router returns `partyMode.active: true`, use Party Mode. Show
   `PARTY MODE` in large uppercase before the dialogue, then show
   agent-to-agent and agent-to-user dialogue with the exact format from

@@ -31,7 +31,16 @@ follow `.MOP/PROTOCOL.md`.
 
 - If the router marks the task as ambiguous, the named primary agent must ask
   clarifying questions before implementation.
-- **[browser] Agent Rule**: Before creating a new browser session with `browser-act`, you must check the user's default browser (e.g., using `xdg-settings get default-web-browser` on Linux) or ask them what browser they use (Chrome, Edge, Brave, Opera). If they use something other than the built-in Chrome, use `browser-act`'s `chrome-direct` mode and guide them to start their browser with remote debugging (`--remote-debugging-port`), rather than just creating a default `chrome` browser.
+- If the router returns `nextAction: "name-required-party-agents"`, ask every
+  question in `missingAgentQuestions` and stop until those agents are named.
+- **[browser] Agent Rule**: Before browser, scraping, extraction, click
+  automation, login flow, bot-detection, or form-filling work, run
+  `mop-core.mjs browser preflight`. It scans the default browser when possible.
+  If it reports Edge, Brave, or Opera, use browser-act `chrome-direct` mode and
+  guide the user to start remote debugging (`--remote-debugging-port`). If it
+  cannot detect a supported browser, ask which browser they use before doing
+  browser work. Never create a default Chrome session first when the user uses
+  another supported browser.
 - If the router returns `partyMode.active: true`, use Party Mode. Show
   `PARTY MODE` in large uppercase before the dialogue, then generate the
   agent-to-agent and agent-to-user dialogue explicitly in your response using this exact format:

@@ -1,6 +1,6 @@
 {
   "name": "burhan-mop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "MOP portable agent memory core installer and CLI.",
   "type": "module",
   "author": "BURHANDEV ENTERPRISE",

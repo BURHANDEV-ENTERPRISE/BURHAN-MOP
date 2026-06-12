@@ -123,6 +123,11 @@ Routing rules:
   genuinely requires several areas of expertise.
 - If the route reports `partyMode.active: true`, run Party Mode before the final
   answer. Name any missing participant agents first.
+- If the route reports `nextAction: "name-required-party-agents"`, stop and ask
+  every question in `missingAgentQuestions`. Do not continue with the task until
+  all required party agents have names.
+- Explicit requests such as `party mode`, `multi-agent`, `semua agent`, or
+  `agent bincang` must activate Party Mode automatically.
 - The route JSON includes an `answerContract`. The assistant must restore
   monthly memory, start the visible answer with `answerContract.firstLine`, and
   save a one-line memory after meaningful work.
@@ -163,6 +168,8 @@ PARTY MODE
 - Do not include irrelevant agents just because they exist.
 - If a needed party role has no named agent, ask the user to name that agent
   before using it.
+- If several party agents are missing, ask for all missing names in one reply:
+  `Kita ada <N> agent belum ada nama. Beri nama untuk ...`
 
 Visible dialogue format:
 
@@ -187,6 +194,32 @@ agent: <from-name> (<from-role>)
 
           <explanation>
 ```
+
+## Browser And Scraping Gate
+
+Browser, scraping, rendered extraction, clicking, login flow, bot-detection, and
+form-filling tasks must pass browser preflight before any browser automation.
+
+Run:
+
+```bash
+node .MOP/scripts/mop-core.mjs browser preflight
+```
+
+Rules:
+
+- First scan the default browser automatically. On Linux this uses
+  `xdg-settings get default-web-browser`; fallback is `$BROWSER`.
+- If Chrome or Chromium is detected, browser automation may proceed with normal
+  Chrome-compatible mode.
+- If Edge, Brave, or Opera is detected, use browser-act `chrome-direct` mode and
+  guide the user to start that browser with `--remote-debugging-port`.
+- If no supported browser is detected, ask the user which browser they use
+  before scraping or browser automation.
+- Do not start a default Chrome session first when the user uses Edge, Brave, or
+  Opera.
+- If `agent route` includes `browserPreflight.needsQuestion: true`, ask
+  `browserPreflight.question` and stop.
 
 ## MOP Workflow
 

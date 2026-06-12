@@ -77,7 +77,34 @@
       "Normal Party mode should use at least 3 participants and prefer 4 when the task has enough relevant roles.",
       "The primary agent coordinates the party and keeps the user intent visible.",
       "Every visible agent message must use the configured dialogue format.",
-      "Agents should ask each other focused questions, answer directly, then hand a clear result to the user."
+      "Agents should ask each other focused questions, answer directly, then hand a clear result to the user.",
+      "Explicit requests such as party mode, multi-agent, semua agent, or agent discussion must activate Party Mode.",
+      "If Party Mode needs unnamed agents, ask for all missing agent names before doing the task."
+    ]
+  },
+  "browserPolicy": {
+    "requirePreflightBeforeBrowserWork": true,
+    "requireDefaultBrowserCheck": true,
+    "supportedChoices": [
+      "Chrome",
+      "Edge",
+      "Brave",
+      "Opera"
+    ],
+    "builtinChromeBrowsers": [
+      "chrome",
+      "chromium"
+    ],
+    "directModeBrowsers": [
+      "brave",
+      "edge",
+      "opera"
+    ],
+    "rules": [
+      "Before browser, scraping, extraction, click automation, login flow, or form filling, run browser preflight.",
+      "Check the user's default browser automatically when possible.",
+      "If the default browser is Edge, Brave, or Opera, use chrome-direct mode and guide the user to start remote debugging.",
+      "If no supported browser is detected, ask the user which browser they use before continuing."
     ]
   },
   "workflow": {
@@ -530,6 +557,12 @@
       "title": "GitHub Coordinator",
       "kind": "operations",
       "purpose": "GitHub repo, branch, PR, issue, release, and merge workflow."
+    },
+    {
+      "role": "browser",
+      "title": "Browser Automation Agent",
+      "kind": "operations",
+      "purpose": "Browser preflight, scraping, rendered extraction, clicking, form filling, login flows, and browser-act coordination."
     },
     {
       "role": "devops",

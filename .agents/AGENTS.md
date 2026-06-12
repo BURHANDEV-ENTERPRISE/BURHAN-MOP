@@ -23,6 +23,14 @@ Before doing anything, read `.MOP/STATE.json` and follow
   `mop-core.mjs memory add --actor <codename> --kind conversation --summary "<outcome>"`.
 - If the router says clarification is needed, ask the clarifying questions
   before implementation.
+- If the router returns `nextAction: "name-required-party-agents"`, ask every
+  question in `missingAgentQuestions` and stop until those agents are named.
+- Before browser, scraping, extraction, click automation, login flow,
+  bot-detection, or form-filling work, run `mop-core.mjs browser preflight`. If
+  it reports Edge, Brave, or Opera, use browser-act `chrome-direct` mode and
+  guide the user to start remote debugging (`--remote-debugging-port`). If it
+  cannot detect a supported browser, ask which browser they use before doing
+  browser work.
 - If the router activates Party Mode, show visible agent-to-agent dialogue using
   the exact format in `.MOP/PROTOCOL.md`, with `PARTY MODE` shown in
   large uppercase before the dialogue. Party Mode normally uses at least 3
