@@ -61,6 +61,14 @@ Paksa overwrite install sedia ada:
 npx burhan-mop install --force
 ```
 
+Installer akan tunjuk terminal UI yang kemas secara default. Untuk automation,
+guna JSON:
+
+```bash
+npx burhan-mop install --json
+npx burhan-mop doctor --json
+```
+
 Selepas install, buka AI coding chat dalam project itu dan jalankan:
 
 ```text
@@ -134,7 +142,7 @@ dan merge hanya bila workflow selamat.
 | --- | --- |
 | npm package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
 | command latest | `npx burhan-mop install` |
-| GitHub release | [`v0.1.1`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.1) |
+| GitHub release | [`v0.1.2`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.2) |
 | Node | `>=20` |
 
 ## Links

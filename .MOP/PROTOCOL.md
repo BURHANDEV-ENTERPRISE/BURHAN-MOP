@@ -287,8 +287,11 @@ apply.
 The package installer command is:
 
 ```bash
-npx burhan-mop install
+npx burhan-mop install [--target <project-folder>] [--force] [--json]
 ```
+
+The default output is a clean terminal UI. Use `--json` for CI, scripts, and
+other automation that needs machine-readable output.
 
 The short package command works after the package is published to npm. Before
 an npm publish, install directly from GitHub:
