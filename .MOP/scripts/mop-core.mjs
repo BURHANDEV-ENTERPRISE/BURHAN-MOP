@@ -242,24 +242,55 @@ function browserPolicy(state) {
   };
 }
 
-function detectDefaultBrowser() {
-  const xdg = spawnSync('xdg-settings', ['get', 'default-web-browser'], {
+function browserFamilyFromValue(raw) {
+  const value = String(raw || '').toLowerCase();
+  if (/(google-chrome|chromehtml|chrome)/.test(value) && !/chromium/.test(value)) return 'chrome';
+  if (/chromium/.test(value)) return 'chromium';
+  if (/brave/.test(value)) return 'brave';
+  if (/(microsoft-edge|mseedge|edge)/.test(value)) return 'edge';
+  if (/opera/.test(value)) return 'opera';
+  if (/firefox/.test(value)) return 'firefox';
+  return 'unknown';
+}
+
+function detectWindowsDefaultBrowser() {
+  const script = [
+    '$ErrorActionPreference = "SilentlyContinue";',
+    '$keys = @(',
+    '"HKCU:\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",',
+    '"HKCU:\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\http\\UserChoice"',
+    ');',
+    'foreach ($key in $keys) {',
+    '  $item = Get-ItemProperty -Path $key -Name ProgId;',
+    '  if ($item.ProgId) { Write-Output $item.ProgId; break }',
+    '}'
+  ].join('\n');
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     cwd: rootDir,
     encoding: 'utf8'
   });
-  const raw = (xdg.status === 0 ? xdg.stdout : '').trim() || process.env.BROWSER || '';
-  const value = raw.toLowerCase();
-  let family = 'unknown';
-  if (/(google-chrome|chrome)/.test(value) && !/chromium/.test(value)) family = 'chrome';
-  else if (/chromium/.test(value)) family = 'chromium';
-  else if (/brave/.test(value)) family = 'brave';
-  else if (/(microsoft-edge|edge)/.test(value)) family = 'edge';
-  else if (/opera/.test(value)) family = 'opera';
-  else if (/firefox/.test(value)) family = 'firefox';
+  const raw = result.status === 0 ? (result.stdout || '').trim().split(/\r?\n/)[0] : '';
+  return raw ? { raw, source: 'windows-registry' } : null;
+}
+
+function detectDefaultBrowser() {
+  let detected = process.platform === 'win32' ? detectWindowsDefaultBrowser() : null;
+  if (!detected) {
+    const xdg = spawnSync('xdg-settings', ['get', 'default-web-browser'], {
+      cwd: rootDir,
+      encoding: 'utf8'
+    });
+    const raw = (xdg.status === 0 ? xdg.stdout : '').trim();
+    if (raw) detected = { raw, source: 'xdg-settings' };
+  }
+  if (!detected && process.env.BROWSER) {
+    detected = { raw: process.env.BROWSER, source: 'BROWSER' };
+  }
+  const raw = detected?.raw || '';
   return {
     raw: raw || null,
-    family,
-    source: raw ? (xdg.status === 0 ? 'xdg-settings' : 'BROWSER') : 'not-detected'
+    family: browserFamilyFromValue(raw),
+    source: detected?.source || 'not-detected'
   };
 }
 

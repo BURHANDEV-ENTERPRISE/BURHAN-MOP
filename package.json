@@ -39,11 +39,12 @@
     "status": "node .MOP/scripts/mop-core.mjs status",
     "workflow": "node .MOP/scripts/mop-workflow.mjs status",
     "doctor": "node .MOP/scripts/burhan-mop.mjs doctor",
+    "test": "node .MOP/scripts/mop-smoke-test.mjs",
     "pack:dry": "npm pack --dry-run",
     "publish:dry": "npm publish --dry-run",
     "publish:public": "npm publish",
     "prepack": "npm run validate",
-    "prepublishOnly": "npm run validate && npm run doctor"
+    "prepublishOnly": "npm run validate && npm run doctor && npm test"
   },
   "files": [
     "bin",

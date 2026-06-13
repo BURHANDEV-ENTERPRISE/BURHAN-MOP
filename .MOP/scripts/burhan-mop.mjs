@@ -32,11 +32,24 @@ const doctorEntries = [
   'AGENTS.md',
   'CLAUDE.md',
   'GEMINI.md',
+  '.mcp.json',
   '.MOP/STATE.json',
   '.MOP/PROTOCOL.md',
   '.MOP/scripts/mop-core.mjs',
   '.MOP/scripts/mop-workflow.mjs',
-  '.agents/skills/mop-help/SKILL.md'
+  '.MOP/scripts/mop-autosycn.mjs',
+  '.MOP/scripts/mop-auto-deploy.mjs',
+  '.MOP/scripts/mop-smoke-test.mjs',
+  '.agents/AGENTS.md',
+  '.agents/skills/mop-help/SKILL.md',
+  '.agents/skills/autosycn/SKILL.md',
+  '.agents/skills/auto-deploy/SKILL.md',
+  '.claude/settings.json',
+  '.claude/skills/mop-help/SKILL.md',
+  '.claude/skills/autosycn/SKILL.md',
+  '.claude/skills/auto-deploy/SKILL.md',
+  '.codex/config.toml',
+  '.gemini/settings.json'
 ];
 
 function parseArgs(argv) {

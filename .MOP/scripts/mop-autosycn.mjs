@@ -399,6 +399,19 @@ function runProjectCommand(command, env) {
   return 'passed';
 }
 
+function highConfidenceSecretPattern() {
+  return /(AIza[0-9A-Za-z_-]{20,}|ghp_[0-9A-Za-z_]{20,}|github_pat_[0-9A-Za-z_]{20,}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[0-9A-Za-z-]{20,})/;
+}
+
+function scanDiffForHighConfidenceSecrets(diffArgs, label) {
+  const diff = runOptional('git', ['diff', '--no-ext-diff', ...diffArgs, '--', '.']);
+  if (!diff.ok || !diff.stdout) return 'passed';
+  if (!highConfidenceSecretPattern().test(diff.stdout)) return 'passed';
+  const names = runOptional('git', ['diff', '--name-only', ...diffArgs, '--', '.']);
+  const changedFiles = names.stdout || 'changed files unavailable';
+  throw new Error(`Possible high-confidence secret found in ${label}:\n${changedFiles}`);
+}
+
 function validateStateIfPresent() {
   if (!existsSync(join(rootDir, '.MOP', 'STATE.json'))) return 'skipped';
   const result = spawnSync('node', ['.MOP/scripts/mop-core.mjs', 'validate'], {
@@ -457,10 +470,13 @@ function guardianReview(state, sourceRef, env) {
   return report;
 }
 
-function commitIfNeeded(reason, env) {
+function commitIfNeeded(reason, env, state) {
   runGit(['add', '-A']);
   const status = runGit(['status', '--porcelain']);
   if (!status) return 'nothing-to-commit';
+  if (state?.autosync?.secretScanBeforeCommit !== false) {
+    scanDiffForHighConfidenceSecrets(['--cached'], 'staged changes');
+  }
   runGit(['commit', '-m', reason], { env });
   return runGit(['rev-parse', '--short', 'HEAD']);
 }
@@ -575,7 +591,7 @@ function push(args) {
     throw new Error(`Team autosycn must commit from ${target}. Run preflight before starting work: node .MOP/scripts/mop-autosycn.mjs preflight --actor ${actor}`);
   }
   ensureBranch(target);
-  const commit = commitIfNeeded(reason, env);
+  const commit = commitIfNeeded(reason, env, state);
   runGit(['push', '-u', 'origin', target], { env });
 
   console.log(JSON.stringify({
@@ -609,7 +625,7 @@ function init(args) {
   appendLedger(state, actor, 'autosycn-init', `Initialized autosycn remote ${remote}.`, agent);
   if (url) state.githubUrl = url;
   writeState(state);
-  const commit = commitIfNeeded('Initialize MOP autosycn baseline', env);
+  const commit = commitIfNeeded('Initialize MOP autosycn baseline', env, state);
   runGit(['push', '-u', 'origin', state.autosync?.targetMainBranch || 'main'], { env });
 
   console.log(JSON.stringify({
@@ -714,6 +730,7 @@ function status() {
     main: state.autosync?.targetMainBranch || 'main',
     workBranchPrefix: state.autosync?.workBranchPrefix || 'dev',
     autoMergeToMain: state.autosync?.autoMergeToMain !== false,
+    secretScanBeforeCommit: state.autosync?.secretScanBeforeCommit !== false,
     mergeGuardian: guardianConfig(state),
     githubIdentity: githubIdentityPolicy(state),
     preflightBeforeWork: state.autosync?.preflightBeforeWork !== false,

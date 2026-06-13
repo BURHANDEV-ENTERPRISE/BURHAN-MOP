@@ -404,6 +404,7 @@
     "targetMainBranch": "main",
     "workBranchPrefix": "dev",
     "preflightBeforeWork": true,
+    "secretScanBeforeCommit": true,
     "autoMergeToMain": true,
     "mergeGuardian": {
       "enabled": true,

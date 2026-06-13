@@ -499,6 +499,8 @@ Autosycn must:
   GitHub username than the active member's configured `githubUsername`.
 - Use the member GitHub identity for setup, preflight, memory, and work branch
   commits. Use `BURHAN-MOP` only for merge guardian commits.
+- Scan staged changes for high-confidence secret tokens before committing or
+  pushing, so secrets do not reach `dev/<codename>` before merge review.
 - In team mode, `main` is the trunk and each user works on `dev/<codename>`.
 - Push to `dev/<codename>` in team mode and `main` in solo mode.
 - After a team push, BURHAN-MOP reviews `dev/<codename>` and merges it into
