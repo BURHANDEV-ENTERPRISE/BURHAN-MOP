@@ -44,6 +44,19 @@ try {
     throw new Error('doctor did not pass in smoke test target');
   }
 
+  const flow = parseJson(run('node', ['.MOP/scripts/mop-flow.mjs', 'status', '--json'], { cwd: target }));
+  if (flow.brand?.name !== 'MOP Flow') {
+    throw new Error('mop-flow status did not report MOP Flow branding');
+  }
+  if (!flow.providers?.every((provider) => provider.mcpServer === 'mop-flow')) {
+    throw new Error('mop-flow provider matrix is not using the mop-flow MCP server name');
+  }
+  if ((flow.skillCatalog?.bridgedCount || 0) < (flow.skillCatalog?.portableCount || 0)) {
+    throw new Error('mop-flow bridged skill count is lower than portable skill count');
+  }
+
+  parseJson(run('node', ['.MOP/scripts/mop-flow.mjs', 'manifest', 'refresh', '--json'], { cwd: target }));
+
   run('node', ['.MOP/scripts/mop-core.mjs', 'validate']);
   console.log('MOP smoke tests OK.');
 } finally {

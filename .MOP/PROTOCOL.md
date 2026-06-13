@@ -240,6 +240,32 @@ node .MOP/scripts/mop-workflow.mjs status --actor <codename>
 The workflow helper returns the suggested phase, lead agent role, party roles,
 next artifact, and gate status. The primary agent still owns the answer.
 
+## MOP Flow
+
+MOP Flow is the provider-neutral runtime and skill bridge owned by MOP.
+Ruflo / Claude Flow may power selected upstream runtime behavior, but they are
+compatibility names, not the user-facing system.
+
+Use:
+
+```bash
+node .MOP/scripts/mop-flow.mjs status --json
+node .MOP/scripts/mop-flow.mjs skills list
+node .MOP/scripts/mop-flow.mjs manifest refresh
+```
+
+Rules:
+
+- Use `mop-flow` as the canonical MCP server name.
+- Use `.agents/skills/` as the portable skill source for every provider.
+- If a skill exists only in `.claude/skills/`, bridge it through MOP Flow and
+  translate Claude-only hooks, slash commands, or tools into the current
+  provider surface.
+- Never let provider-specific runtime instructions bypass MOP auth, Agent
+  Router, memory, workflow, readiness, autosycn, or project-root policy.
+- User-facing explanations should call the system MOP Flow unless explicitly
+  explaining upstream Ruflo / Claude Flow compatibility.
+
 ## Artifacts
 
 Complex work should create durable artifacts under `.MOP/artifacts/`.
@@ -541,6 +567,7 @@ Only activate deployment after explicit confirmation.
 - `.MOP/STATE.json` - durable project/member/agent state.
 - `.MOP/PROTOCOL.md` - this protocol.
 - `.MOP/scripts/mop-core.mjs` - setup/login/agent helper.
+- `.MOP/scripts/mop-flow.mjs` - provider-neutral skill bridge and runtime status helper.
 - `.MOP/scripts/mop-workflow.mjs` - workflow/help/artifact/readiness/review helper.
 - `.MOP/scripts/burhan-mop.mjs` - installer CLI for `npx burhan-mop install`.
 - `.MOP/scripts/mop-autosycn.mjs` - identity-safe autosycn helper.

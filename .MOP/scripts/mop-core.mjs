@@ -1023,6 +1023,21 @@ function validate() {
   if (state.autosync?.githubIdentity && typeof state.autosync.githubIdentity !== 'object') {
     errors.push('autosync.githubIdentity must be object');
   }
+  if (state.mopFlow && typeof state.mopFlow !== 'object') errors.push('mopFlow must be object');
+  if (state.mopFlow?.enabled !== false) {
+    if (state.mopFlow?.brand !== 'MOP Flow') errors.push('mopFlow.brand must be MOP Flow');
+    if (state.mopFlow?.canonicalMcpServer !== 'mop-flow') errors.push('mopFlow.canonicalMcpServer must be mop-flow');
+    if (state.mopFlow?.providerParity?.enabled === false) errors.push('mopFlow.providerParity must remain enabled');
+    for (const path of [
+      '.MOP/scripts/mop-flow.mjs',
+      '.agents/skills/mop-flow/SKILL.md',
+      '.claude/skills/mop-flow/SKILL.md'
+    ]) {
+      if (!existsSync(join(rootDir, path))) errors.push(`mopFlow required file missing: ${path}`);
+    }
+    const mcpText = existsSync(join(rootDir, '.mcp.json')) ? readFileSync(join(rootDir, '.mcp.json'), 'utf8') : '';
+    if (mcpText && !mcpText.includes('"mop-flow"')) errors.push('.mcp.json must register mop-flow');
+  }
   if (state.projectRootPolicy && typeof state.projectRootPolicy !== 'object') errors.push('projectRootPolicy must be object');
   if (state.projectRootPolicy?.rules && !Array.isArray(state.projectRootPolicy.rules)) {
     errors.push('projectRootPolicy.rules must be array');
@@ -1117,6 +1132,7 @@ function status() {
     projectRootPolicy: state.projectRootPolicy || {},
     readinessGate: state.readinessGate || {},
     adversarialReview: state.adversarialReview || {},
+    mopFlow: state.mopFlow || {},
     installer: state.installer || {},
     mode: state.mode,
     githubUrl: state.githubUrl,

@@ -1,4 +1,6 @@
-# RuFlo V3 Runtime Configuration
+# MOP Flow Runtime Configuration
+# Upstream runtime compatibility: Ruflo / Claude Flow V3.
+# MOP owns provider routing, skills, memory gates, and workflow policy.
 # Generated: 2026-06-11T03:01:05.201Z
 
 version: "3.0.0"

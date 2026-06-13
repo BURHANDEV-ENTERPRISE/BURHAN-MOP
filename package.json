@@ -17,6 +17,7 @@
     "agent",
     "memory",
     "memorycore",
+    "mop-flow",
     "codex",
     "claude",
     "gemini",
@@ -32,11 +33,14 @@
   "bin": {
     "burhan-mop": "bin/burhan-mop.mjs",
     "mop-core": "bin/mop-core.mjs",
+    "mop-flow": "bin/mop-flow.mjs",
     "mop-workflow": "bin/mop-workflow.mjs"
   },
   "scripts": {
     "validate": "node .MOP/scripts/mop-core.mjs validate",
     "status": "node .MOP/scripts/mop-core.mjs status",
+    "flow": "node .MOP/scripts/mop-flow.mjs status",
+    "flow:manifest": "node .MOP/scripts/mop-flow.mjs manifest refresh",
     "workflow": "node .MOP/scripts/mop-workflow.mjs status",
     "doctor": "node .MOP/scripts/burhan-mop.mjs doctor",
     "test": "node .MOP/scripts/mop-smoke-test.mjs",

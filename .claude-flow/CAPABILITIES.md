@@ -1,4 +1,7 @@
-# RuFlo V3 - Complete Capabilities Reference
+# MOP Flow Runtime Capabilities Reference
+> Upstream runtime compatibility: Ruflo / Claude Flow V3. MOP Flow is the
+> user-facing layer that owns provider routing, skills, memory gates, and
+> workflow policy.
 > Generated: 2026-06-11T03:01:05.205Z
 > Full documentation: https://github.com/ruvnet/claude-flow
 

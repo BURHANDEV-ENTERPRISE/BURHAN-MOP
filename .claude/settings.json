@@ -163,10 +163,10 @@
   },
   "permissions": {
     "allow": [
-      "Bash(npx @claude-flow*)",
-      "Bash(npx claude-flow*)",
+      "Bash(npx ruflo*)",
+      "Bash(node .MOP/scripts/mop-flow.mjs*)",
       "Bash(node .claude/*)",
-      "mcp__claude-flow__*"
+      "mcp__mop-flow__*"
     ],
     "deny": [
       "Read(./.env)",
@@ -174,9 +174,29 @@
     ]
   },
   "env": {
+    "MOP_FLOW_BRAND": "MOP Flow",
+    "MOP_FLOW_CANONICAL": "true",
+    "MOP_FLOW_PROVIDER_PARITY": "true",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_FLOW_V3_ENABLED": "true",
     "CLAUDE_FLOW_HOOKS_ENABLED": "true"
+  },
+  "mopFlow": {
+    "brand": "MOP Flow",
+    "canonicalMcpServer": "mop-flow",
+    "portableSkillDir": ".agents/skills",
+    "runtimeNativeSkillDir": ".claude/skills",
+    "manifestCommand": "node .MOP/scripts/mop-flow.mjs manifest refresh",
+    "statusCommand": "node .MOP/scripts/mop-flow.mjs status --json",
+    "providerParity": {
+      "enabled": true,
+      "providers": [
+        "claude",
+        "codex",
+        "gemini",
+        "antigravity"
+      ]
+    }
   },
   "claudeFlow": {
     "version": "3.0.0",

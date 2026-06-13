@@ -306,6 +306,37 @@
       "Customization must not bypass auth, agent gate, autosycn identity, or BURHAN-MOP review."
     ]
   },
+  "mopFlow": {
+    "enabled": true,
+    "brand": "MOP Flow",
+    "canonicalMcpServer": "mop-flow",
+    "upstreamRuntime": "ruflo@latest",
+    "legacyRuntimeNames": [
+      "Ruflo",
+      "Claude Flow"
+    ],
+    "portableSkillDir": ".agents/skills",
+    "runtimeNativeSkillDir": ".claude/skills",
+    "manifest": ".MOP/flow/skill-manifest.json",
+    "statusCommand": "node .MOP/scripts/mop-flow.mjs status --json",
+    "manifestCommand": "node .MOP/scripts/mop-flow.mjs manifest refresh",
+    "providerParity": {
+      "enabled": true,
+      "providers": [
+        "claude",
+        "codex",
+        "gemini",
+        "antigravity"
+      ],
+      "rule": "All providers use MOP auth, memory, agent routing, workflow, and bridged skill inventory before provider-specific runtime behavior."
+    },
+    "rules": [
+      "MOP Flow is the user-facing brand.",
+      "Ruflo and Claude Flow are upstream runtime compatibility names only.",
+      "Bridge .claude/skills through the MOP Flow manifest for non-Claude providers.",
+      "Do not let provider-specific tools bypass MOP gates."
+    ]
+  },
   "projectRootPolicy": {
     "enabled": true,
     "workInWorkspaceRoot": true,
@@ -442,6 +473,10 @@
   },
   "members": {},
   "installedSkills": [
+    {
+      "name": "mop-flow",
+      "purpose": "Provider-neutral skill bridge and runtime wrapper. Makes MOP the canonical layer above Ruflo / Claude Flow across Claude, Codex, Gemini, and Antigravity."
+    },
     {
       "name": "autosycn",
       "purpose": "Identity-safe memory + git autosync flow. Commits and merges as the active user, never as the AI tool."

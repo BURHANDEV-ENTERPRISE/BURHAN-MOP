@@ -1,6 +1,7 @@
 {
   "schemaVersion": "0.1.0",
   "workflow": {},
+  "mopFlow": {},
   "agents": {},
   "artifacts": {},
   "partyMode": {}

@@ -89,9 +89,10 @@ Installer command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
 `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
 
-This directory is a portable Ruflo / Claude Flow agent core. It must work across
-Claude Code, Codex / ChatGPT coding surfaces, Gemini CLI, and Google
-Antigravity. Treat this file as the provider-neutral source of truth.
+This directory is the portable **MOP Flow** agent core. MOP Flow is the
+provider-neutral layer above upstream Ruflo / Claude Flow runtime compatibility.
+It must work across Claude Code, Codex / ChatGPT coding surfaces, Gemini CLI,
+and Google Antigravity. Treat this file as the provider-neutral source of truth.
 
 ## Provider Entry Points
 
@@ -99,6 +100,20 @@ Antigravity. Treat this file as the provider-neutral source of truth.
 - Codex / ChatGPT coding agents: read this `AGENTS.md`.
 - Gemini CLI: read `GEMINI.md`, which imports this file, and `.gemini/settings.json`.
 - Antigravity managed agents: read `.agents/AGENTS.md` and `.agents/skills/`.
+
+## MOP Flow Canonical Layer
+
+- User-facing brand: **MOP Flow**.
+- Canonical MCP server name: `mop-flow`.
+- Upstream runtime command: `npx -y ruflo@latest mcp start`.
+- Compatibility env vars such as `CLAUDE_FLOW_*` may remain because the upstream
+  runtime expects them; they do not make Claude the owner of the workflow.
+- Before using runtime skills/tools, check provider parity when relevant:
+
+```bash
+node .MOP/scripts/mop-flow.mjs status --json
+node .MOP/scripts/mop-flow.mjs skills list
+```
 
 ## Core Rules
 
@@ -118,14 +133,17 @@ Antigravity. Treat this file as the provider-neutral source of truth.
 - Do not assume Claude-only hooks, slash commands, or Agent tools exist outside
   Claude Code. Translate the workflow into the current provider's tools.
 
-## Ruflo Runtime
+## MOP Flow Runtime
 
-The Ruflo runtime lives in `.claude-flow/`. The shared MCP declaration is in
-`.mcp.json`. Claude-specific hooks and helper scripts live in `.claude/`.
+The upstream runtime data lives in `.claude-flow/`, but MOP Flow owns the
+workflow, memory gates, agent routing, and skill bridge. The shared MCP
+declaration is in `.mcp.json`. Claude-specific hooks and helper scripts live in
+`.claude/`.
 
 Use these commands when the current environment supports shell execution:
 
 ```bash
+node .MOP/scripts/mop-flow.mjs status
 npx -y ruflo@latest doctor --fix
 npx -y ruflo@latest mcp start
 npx -y ruflo@latest swarm status
@@ -142,10 +160,12 @@ diagnostic commands before making changes.
   perform the task directly and keep a clear checklist.
 - If instructions mention Claude hooks, treat them as policy guidance in Codex,
   Gemini, or Antigravity unless that provider has an equivalent hook system.
-- If instructions mention `.claude/skills`, use those files as references. For
-  Antigravity, canonical portable skills should be placed under `.agents/skills/`.
+- If instructions mention `.claude/skills`, bridge those files through MOP Flow.
+  The canonical portable skill surface is `.agents/skills/` for all providers.
 - If MCP is available, prefer MCP for live tools and stateful integrations. If
   MCP is unavailable, continue with filesystem and shell inspection.
+- Do not call the user-facing system Claude Flow unless explaining upstream
+  compatibility. In normal work, call it MOP Flow.
 
 ## Verification
 
@@ -153,6 +173,7 @@ Before finishing any configuration change in this core:
 
 - Parse `.mcp.json`, `.claude/settings.json`, and `.gemini/settings.json` when
   present.
+- Run `node .MOP/scripts/mop-flow.mjs status --json` for provider/skill changes.
 - Check TOML files with a parser if one is available.
 - Confirm no secrets were introduced.
 - Report which provider surfaces are covered and which need manual auth.

@@ -20,6 +20,7 @@
   <img src="https://img.shields.io/badge/Codex-ready-111111?style=flat-square" alt="Codex ready">
   <img src="https://img.shields.io/badge/Gemini-ready-4285F4?style=flat-square" alt="Gemini ready">
   <img src="https://img.shields.io/badge/Antigravity-ready-00A67E?style=flat-square" alt="Antigravity ready">
+  <img src="https://img.shields.io/badge/MOP_Flow-provider_neutral-00A67E?style=flat-square" alt="MOP Flow">
   <img src="https://img.shields.io/badge/MOP_Workflow-BMAD_inspired-FFB000?style=flat-square" alt="MOP workflow">
 </p>
 
@@ -39,6 +40,19 @@ workflow gates, artifact folders, autosycn flow, and deployment setup.
 
 The goal is simple: install once, then Claude, Codex / ChatGPT, Gemini, and
 Antigravity can enter the same project with the same source of truth.
+
+## MOP Flow
+
+MOP Flow is the provider-neutral orchestration and skill bridge inside
+BURHAN-MOP. It keeps the MOP brand and rules above upstream Ruflo / Claude Flow
+runtime compatibility, so Claude, Codex, Gemini, and Antigravity can see the
+same skill inventory and MCP runtime surface.
+
+```bash
+node .MOP/scripts/mop-flow.mjs status
+node .MOP/scripts/mop-flow.mjs skills list
+node .MOP/scripts/mop-flow.mjs manifest refresh
+```
 
 ## Install
 
@@ -92,6 +106,7 @@ After install, open your AI coding chat in that project and run:
 | Auth Gate | First action is always setup/login. No work starts before the gate passes. |
 | Agent Router | Picks one primary agent and adds support agents only when useful. |
 | Party Mode | Shows visible agent-to-agent discussion for multi-role decisions. |
+| MOP Flow | Provider-neutral skill bridge and MCP runtime wrapper across Claude, Codex, Gemini, and Antigravity. |
 | MOP Workflow | BMAD-inspired flow from idea to release with readiness checks. |
 | Artifacts | Keeps plans, specs, reviews, and release notes under `.MOP/artifacts/`. |
 | Autosycn | Commits and pushes as the real user, not as the AI tool identity. |
@@ -120,6 +135,7 @@ Local project helpers:
 ```bash
 node .MOP/scripts/mop-core.mjs status
 node .MOP/scripts/mop-core.mjs validate
+node .MOP/scripts/mop-flow.mjs status
 node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<task>"
 node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
 ```
