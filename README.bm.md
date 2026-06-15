@@ -49,41 +49,20 @@ Ruflo / Claude Flow, jadi Claude, Codex, Gemini, dan Antigravity nampak skill
 inventory dan MCP runtime surface yang sama.
 
 ```bash
-node .MOP/scripts/mop-flow.mjs status
-node .MOP/scripts/mop-flow.mjs skills list
-node .MOP/scripts/mop-flow.mjs manifest refresh
+npx mop-flow
 ```
 
 Roadmap improvement aktif ada di `.MOP/flow/ROADMAP.md`.
 
 ## Install
 
-Jalankan dalam root project:
+Jalankan ini dalam terminal anda untuk membuka Dashboard TUI interaktif:
 
 ```bash
-npx mop-flow install
-npx mop-flow doctor
+npx mop-flow
 ```
 
-Install ke folder lain:
-
-```bash
-npx mop-flow install --target "C:\path\to\project"
-```
-
-Paksa overwrite install sedia ada:
-
-```bash
-npx mop-flow install --force
-```
-
-Installer akan tunjuk terminal UI yang kemas secara default. Untuk automation,
-guna JSON:
-
-```bash
-npx mop-flow install --json
-npx mop-flow doctor --json
-```
+TUI interaktif akan membenarkan anda untuk Install, Update, Delete, atau menyemak Status MOP Flow terus dalam projek anda tanpa perlu mengingati arahan (commands) yang kompleks.
 
 Selepas install, buka AI coding chat dalam project itu dan jalankan:
 
@@ -128,9 +107,7 @@ Selepas install, buka AI coding chat dalam project itu dan jalankan:
 ## Command Berguna
 
 ```bash
-npx mop-flow install
-npx mop-flow doctor
-npx mop-flow package
+npx mop-flow
 ```
 
 Helper dalam project:

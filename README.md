@@ -49,40 +49,20 @@ runtime compatibility, so Claude, Codex, Gemini, and Antigravity can see the
 same skill inventory and MCP runtime surface.
 
 ```bash
-node .MOP/scripts/mop-flow.mjs status
-node .MOP/scripts/mop-flow.mjs skills list
-node .MOP/scripts/mop-flow.mjs manifest refresh
+npx mop-flow
 ```
 
 The active improvement roadmap lives in `.MOP/flow/ROADMAP.md`.
 
 ## Install
 
-Run this inside the project root:
+Run this inside your terminal to launch the interactive Dashboard:
 
 ```bash
-npx mop-flow install
-npx mop-flow doctor
+npx mop-flow
 ```
 
-Install into another folder:
-
-```bash
-npx mop-flow install --target "C:\path\to\project"
-```
-
-Overwrite an existing MOP install:
-
-```bash
-npx mop-flow install --force
-```
-
-The installer shows a clean terminal UI by default. For automation, use JSON:
-
-```bash
-npx mop-flow install --json
-npx mop-flow doctor --json
-```
+The interactive TUI will allow you to Install, Update, Delete, or check the Status of MOP Flow in your project directly without needing to remember complex commands.
 
 After install, open your AI coding chat in that project and run:
 
@@ -127,9 +107,7 @@ After install, open your AI coding chat in that project and run:
 ## Useful Commands
 
 ```bash
-npx mop-flow install
-npx mop-flow doctor
-npx mop-flow package
+npx mop-flow
 ```
 
 Local project helpers:
