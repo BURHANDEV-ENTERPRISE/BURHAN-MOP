@@ -95,9 +95,9 @@ function startDashboard(args) {
     `);
   });
 
-  server.listen(port, () => {
+  server.listen(port, '127.0.0.1', () => {
     console.log(`[MOP Dashboard] Started by ${actor}.`);
-    console.log(`[MOP Dashboard] Listening at http://localhost:${port}`);
+    console.log(`[MOP Dashboard] Listening at http://127.0.0.1:${port}`);
   });
 }
 

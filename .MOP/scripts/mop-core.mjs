@@ -25,6 +25,20 @@ function writeState(state) {
   renameSync(tmp, statePath);
 }
 
+function enforceSessionTimeout(state, actor) {
+  if (!state.initialized || !actor || !state.lastActiveAt) return;
+  const oneHour = 60 * 60 * 1000;
+  const elapsed = Date.now() - new Date(state.lastActiveAt).getTime();
+  if (elapsed > oneHour) {
+    state.activeMember = null;
+    state.lastActiveAt = null;
+    writeState(state);
+    throw new Error('Session expired (inactive for more than 1 hour). Please login again.');
+  }
+  state.lastActiveAt = now();
+  writeState(state);
+}
+
 function parseArgs(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
@@ -675,7 +689,12 @@ function setup(args) {
     requireForEveryConversation: true,
     defaultRole: 'core',
     defaultTitle: 'Core Agent',
-    gateOrder: 'AUTH_GATE_THEN_AGENT_ROUTER_THEN_AGENT_GATE_THEN_ACTION'
+    gateOrder: 'AUTH_GATE_THEN_AGENT_ROUTER_THEN_AGENT_GATE_THEN_ACTION',
+    rules: [
+      "Agents MUST strictly follow their designated role.",
+      "If a task is outside their domain, they must not attempt to guess or perform it.",
+      "Instead, they must trigger Party Mode to invite the correct specialist."
+    ]
   };
   state.mode = mode;
   state.joinMode = mode === 'team' ? joinMode : 'owner-approved';
@@ -711,6 +730,7 @@ function login(args) {
     return;
   }
   state.activeMember = codename;
+  state.lastActiveAt = now();
   appendLedger(state, codename, 'login', 'Member authenticated.');
   writeState(state);
   console.log(`Active member: ${codename}`);
@@ -730,6 +750,7 @@ function agentActivate(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
 
   const role = slug(requireArg(args, 'role'));
   const title = String(args.title || role);
@@ -767,6 +788,7 @@ function agentUse(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
   const name = requireArg(args, 'name').trim();
   const agent = (state.agentRoster || []).find((item) => item.name.toLowerCase() === name.toLowerCase());
   if (!agent) throw new Error(`Unknown agent: ${name}`);
@@ -817,6 +839,7 @@ function agentRoute(args) {
   if (state.agentRouter?.enabled === false) throw new Error('Agent Router is disabled.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
   const task = String(args.task || args._?.join(' ') || '').trim();
   if (!task) throw new Error('Missing --task');
 
@@ -928,6 +951,7 @@ function memoryAdd(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = slug(requireArg(args, 'actor'));
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
   const agent = requireActiveAgent(state, actor);
   const summary = String(args.summary || args._?.join(' ') || '').trim();
   const kind = String(args.kind || 'conversation');
@@ -959,6 +983,7 @@ function memoryBrief(args) {
   const actor = slug(String(args.actor || state.activeMember || ''));
   if (!actor) throw new Error('Missing --actor');
   if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
   const agent = activeAgentFor(state, actor);
   const month = String(args.month || monthKey());
   const limit = Number(args.limit || memoryPolicy(state).recentLimit || 20);

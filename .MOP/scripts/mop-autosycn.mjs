@@ -646,9 +646,10 @@ function mergeMain(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
-  if (state.autosync?.requireOwnerForMerge === true && actor !== state.ownerCodename) {
-    throw new Error('Only the owner can request BURHAN-MOP merge to main.');
-  }
+  
+  // Enforce BURHAN-MOP handling all merges to main in team mode
+  // Notice: The requireOwnerForMerge restriction has been explicitly removed 
+  // so that all team members' code is safely merged by BURHAN-MOP.
   const from = String(args.from || actor);
   const prefix = state.autosync?.workBranchPrefix || 'dev';
   const reason = String(args.reason || `Merge ${prefix}/${from}`);
@@ -719,6 +720,8 @@ function runAll(args) {
   const guardian = guardianConfig(state);
   if (state.mode === 'team' && state.autosync?.autoMergeToMain !== false && guardian.autoReviewAfterPush !== false) {
     const prefix = state.autosync?.workBranchPrefix || 'dev';
+    console.log(`\nTeam member ${actor} pushed to ${prefix}/${actor} branch.`);
+    console.log(`BURHAN-MOP will now review and merge to main.`);
     mergeMain({ actor, from: actor, reason: `${guardian.name || 'BURHAN-MOP'} approved merge ${prefix}/${actor}: ${reason}` });
   }
 }

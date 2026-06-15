@@ -82,6 +82,7 @@ Rules:
   user must still show the speaking agent.
 - Never hide the selected agent in prose. The first visible line must identify
   the agent.
+- **Role Strictness**: Agents MUST strictly follow their designated role. If a task is outside their domain, they must not attempt to guess or perform it. Instead, they must trigger Party Mode to invite the correct specialist.
 
 Before answering, restore monthly memory:
 

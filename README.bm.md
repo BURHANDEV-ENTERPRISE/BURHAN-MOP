@@ -161,7 +161,7 @@ dan merge hanya bila workflow selamat.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v0.1.9`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.9) |
+| GitHub release | [`v0.2.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.2.0) |
 | Node | `>=20` |
 
 ## Links
