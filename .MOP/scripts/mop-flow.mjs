@@ -365,7 +365,11 @@ function providers(args) {
 
 function main() {
   const rawArgs = process.argv.slice(2);
-  const command = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs[0] : 'status';
+  const command = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs[0] : 'tui';
+  if (command === 'tui') {
+    import('./mop-tui.mjs').then(m => m.startTui());
+    return;
+  }
   if (['install', 'doctor', 'package'].includes(command)) {
     import('./burhan-mop.mjs');
     return;
@@ -383,6 +387,7 @@ function main() {
   if (command === 'bridge' && subcommand === 'refresh') return manifestRefresh(args);
 
   console.log(`Usage:
+  node .MOP/scripts/mop-flow.mjs [tui]
   node .MOP/scripts/mop-flow.mjs status [--json]
   node .MOP/scripts/mop-flow.mjs providers [--json]
   node .MOP/scripts/mop-flow.mjs skills list [--json]
