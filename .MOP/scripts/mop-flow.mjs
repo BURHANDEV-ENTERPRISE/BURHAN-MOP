@@ -366,6 +366,10 @@ function providers(args) {
 function main() {
   const rawArgs = process.argv.slice(2);
   const command = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs[0] : 'status';
+  if (['install', 'doctor', 'package'].includes(command)) {
+    import('./burhan-mop.mjs');
+    return;
+  }
   const afterCommand = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs.slice(1) : rawArgs;
   const subcommand = afterCommand[0] && !afterCommand[0].startsWith('--') ? afterCommand[0] : undefined;
   const rest = subcommand ? afterCommand.slice(1) : afterCommand;
