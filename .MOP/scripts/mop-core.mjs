@@ -935,6 +935,8 @@ function memoryAdd(args) {
 
   appendLedger(state, actor, 'memory', summary, agent);
   const saved = appendMonthlyMemory(state, actor, kind, summary, agent);
+  // TODO(Phase 3): Implement Hybrid Vector Memory chunking and indexing here
+  // e.g. generate vector embedding for `summary` and store in .MOP/memory/vector_index/
   writeState(state);
   console.log(JSON.stringify({
     ok: true,
