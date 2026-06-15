@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -154,6 +154,16 @@ function buildInstallReport(args) {
     join(targetRoot, entry),
     force
   ));
+  
+  // Save VERSION.txt locally
+  try {
+    const pkg = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+    mkdirSync(join(targetRoot, '.MOP'), { recursive: true });
+    writeFileSync(join(targetRoot, '.MOP', 'VERSION.txt'), pkg.version, 'utf8');
+  } catch (err) {
+    // ignore
+  }
+
   const summary = summarize(results);
   return {
     ok: summary.missing === 0,
@@ -246,6 +256,26 @@ function doctor(args) {
   renderDoctor(report);
 }
 
+function uninstall(args) {
+  const targetRoot = process.cwd();
+  let deleted = 0;
+  for (const entry of installEntries) {
+    const p = join(targetRoot, entry);
+    if (existsSync(p)) {
+      rmSync(p, { recursive: true, force: true });
+      deleted++;
+    }
+  }
+  if (asJson(args)) {
+    console.log(JSON.stringify({ ok: true, deleted, target: targetRoot }, null, 2));
+    return;
+  }
+  header('MOP Flow uninstaller', 'Removed MOP from project');
+  console.log(`${paint('bold', 'Target')} : ${targetRoot}`);
+  console.log(`${paint('bold', 'Status')} : ${deleted} items deleted.`);
+  console.log('');
+}
+
 function listPackage(args) {
   const report = {
     packageRoot,
@@ -269,18 +299,14 @@ function listPackage(args) {
 }
 
 function main() {
-  const [command, ...rest] = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
+  const command = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs[0] : 'install';
+  const rest = rawArgs[0] && !rawArgs[0].startsWith('--') ? rawArgs.slice(1) : rawArgs;
   const args = parseArgs(rest);
-  if (command === 'install') return install(args);
   if (command === 'doctor') return doctor(args);
   if (command === 'package') return listPackage(args);
-  console.log(`Usage:
-  npx mop-flow install [--target PATH] [--force] [--json]
-  npx mop-flow doctor [--json]
-  npx mop-flow package [--json]
-
-  Legacy alias while users migrate:
-  npx burhan-mop install [--target PATH] [--force] [--json]`);
+  if (command === 'delete' || command === 'uninstall') return uninstall(args);
+  return install(args);
 }
 
 try {
