@@ -240,6 +240,22 @@ node .MOP/scripts/mop-workflow.mjs status --actor <codename>
 The workflow helper returns the suggested phase, lead agent role, party roles,
 next artifact, and gate status. The primary agent still owns the answer.
 
+## MOP Goal-Oriented Action Planning (MOP-GOAP)
+
+MOP GOAP breaks down high-level objectives into actionable, authorized steps.
+It routes tasks dynamically while strictly adhering to MOP's authentication gate and workflow constraints.
+
+Use:
+
+```bash
+node .MOP/scripts/mop-planner.mjs goal --actor <codename> --objective "<high-level goal>"
+```
+
+Rules:
+- MOP Orchestrator (`[coreName]`) breaks the goal down into preconditions and steps.
+- Delegated tasks must respect the `Auth Gate` and append to the ledger.
+- Use `node .MOP/scripts/mop-planner.mjs status` to track the current active plan.
+
 ## MOP Flow
 
 MOP Flow is the provider-neutral runtime and skill bridge owned by MOP.
@@ -405,6 +421,31 @@ Autosycn memory also writes to the monthly memory file:
 
 ```bash
 node .MOP/scripts/mop-autosycn.mjs memory --actor <codename> --summary "<what changed>"
+```
+
+## Federation (Cross-Project Memory)
+
+MOP Federation allows different projects on the same machine (or trusted network) to securely share architectural memory without compromising credentials.
+
+Use:
+
+```bash
+node .MOP/scripts/mop-federation.mjs join --actor <codename> --target "<other-project-path>"
+node .MOP/scripts/mop-federation.mjs status --actor <codename>
+```
+
+Rules:
+- Memory ledgers are merged/queried selectively via `Lumina`.
+- Strict PII stripping must occur before memory leaves the project scope.
+
+## Local MOP Web Dashboard
+
+Visualizes MOP State (Ledger, Quests, Agents) locally.
+
+Use:
+
+```bash
+node .MOP/scripts/mop-dashboard.mjs start --actor <codename> --port 3000
 ```
 
 ## Installer
