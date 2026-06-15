@@ -27,6 +27,14 @@ function parseJson(output) {
 const target = mkdtempSync(join(tmpdir(), 'mop-smoke-'));
 
 try {
+  const packageJson = parseJson(readFileSync('package.json', 'utf8'));
+  if (packageJson.name !== 'mop-flow') {
+    throw new Error('package.json name must be mop-flow');
+  }
+  if (!packageJson.bin?.['mop-flow']) {
+    throw new Error('package.json must expose mop-flow bin');
+  }
+
   parseJson(run('node', ['.MOP/scripts/burhan-mop.mjs', 'install', '--target', target, '--json']));
 
   const statePath = join(target, '.MOP', 'STATE.json');

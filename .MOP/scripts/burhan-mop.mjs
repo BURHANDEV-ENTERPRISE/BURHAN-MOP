@@ -35,6 +35,7 @@ const doctorEntries = [
   '.mcp.json',
   '.MOP/STATE.json',
   '.MOP/PROTOCOL.md',
+  '.MOP/flow/ROADMAP.md',
   '.MOP/flow/skill-manifest.json',
   '.MOP/scripts/mop-core.mjs',
   '.MOP/scripts/mop-flow.mjs',
@@ -156,7 +157,8 @@ function buildInstallReport(args) {
   const summary = summarize(results);
   return {
     ok: summary.missing === 0,
-    command: 'npx burhan-mop install',
+    command: 'npx mop-flow install',
+    legacyCommand: 'npx burhan-mop install',
     target: targetRoot,
     force,
     results,
@@ -170,7 +172,7 @@ function buildInstallReport(args) {
 }
 
 function renderInstall(report) {
-  header('BURHAN-MOP installer', 'Portable AI MemoryCore for Claude, Codex / ChatGPT, Gemini, and Antigravity');
+  header('MOP Flow installer', 'Portable AI MemoryCore for Claude, Codex / ChatGPT, Gemini, and Antigravity');
   console.log(`${paint('bold', 'Target')} : ${report.target}`);
   console.log(`${paint('bold', 'Mode')}   : ${report.force ? 'force overwrite' : 'safe install'}`);
   rule();
@@ -191,7 +193,8 @@ function renderInstall(report) {
     console.log(`  ${index + 1}. ${item}`);
   });
   console.log('');
-  console.log(paint('dim', 'Automation JSON: npx burhan-mop install --json'));
+  console.log(paint('dim', 'Automation JSON: npx mop-flow install --json'));
+  console.log(paint('dim', 'Legacy alias: npx burhan-mop install'));
 }
 
 function install(args) {
@@ -221,7 +224,7 @@ function buildDoctorReport() {
 }
 
 function renderDoctor(report) {
-  header('BURHAN-MOP doctor', 'Workspace health check');
+  header('MOP Flow doctor', 'Workspace health check');
   console.log(`${paint('bold', 'Project')}: ${report.cwd}`);
   rule();
   for (const item of report.results) {
@@ -231,7 +234,7 @@ function renderDoctor(report) {
   rule();
   console.log(`${paint('bold', 'Status')}: ${report.ok ? paint('green', 'ready') : paint('red', 'missing files')}`);
   console.log('');
-  console.log(paint('dim', 'Automation JSON: npx burhan-mop doctor --json'));
+  console.log(paint('dim', 'Automation JSON: npx mop-flow doctor --json'));
 }
 
 function doctor(args) {
@@ -255,14 +258,14 @@ function listPackage(args) {
     console.log(JSON.stringify(report, null, 2));
     return;
   }
-  header('BURHAN-MOP package', 'Published package contents');
+  header('MOP Flow package', 'Published package contents');
   console.log(`${paint('bold', 'Root')}: ${report.packageRoot}`);
   rule();
   for (const item of report.entries) {
     console.log(`${item.type.padEnd(4)} ${item.name}`);
   }
   console.log('');
-  console.log(paint('dim', 'Automation JSON: npx burhan-mop package --json'));
+  console.log(paint('dim', 'Automation JSON: npx mop-flow package --json'));
 }
 
 function main() {
@@ -272,9 +275,12 @@ function main() {
   if (command === 'doctor') return doctor(args);
   if (command === 'package') return listPackage(args);
   console.log(`Usage:
-  npx burhan-mop install [--target PATH] [--force] [--json]
-  npx burhan-mop doctor [--json]
-  npx burhan-mop package [--json]`);
+  npx mop-flow install [--target PATH] [--force] [--json]
+  npx mop-flow doctor [--json]
+  npx mop-flow package [--json]
+
+  Legacy alias while users migrate:
+  npx burhan-mop install [--target PATH] [--force] [--json]`);
 }
 
 try {

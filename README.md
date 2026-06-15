@@ -1,12 +1,12 @@
-<h1 align="center">BURHAN-MOP</h1>
+<h1 align="center">MOP Flow</h1>
 
 <p align="center">
   <strong>MOP portable AI MemoryCore for Claude, Codex / ChatGPT, Gemini, and Antigravity.</strong>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/burhan-mop">
-    <img src="https://img.shields.io/npm/v/burhan-mop?style=for-the-badge&label=NPM" alt="npm version">
+  <a href="https://www.npmjs.com/package/mop-flow">
+    <img src="https://img.shields.io/npm/v/mop-flow?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -32,9 +32,9 @@
 
 ---
 
-## What Is BURHAN-MOP?
+## What Is MOP Flow?
 
-BURHAN-MOP is a portable **MOP (Memory of Planet) core** for AI coding workspaces.
+MOP Flow is a portable **MOP (Memory of Planet) core** for AI coding workspaces.
 It gives every supported AI provider the same project memory, agent rules,
 workflow gates, artifact folders, autosycn flow, and deployment setup.
 
@@ -43,8 +43,8 @@ Antigravity can enter the same project with the same source of truth.
 
 ## MOP Flow
 
-MOP Flow is the provider-neutral orchestration and skill bridge inside
-BURHAN-MOP. It keeps the MOP brand and rules above upstream Ruflo / Claude Flow
+MOP Flow is the provider-neutral orchestration and skill bridge for MOP. It
+keeps the MOP brand and rules above upstream Ruflo / Claude Flow
 runtime compatibility, so Claude, Codex, Gemini, and Antigravity can see the
 same skill inventory and MCP runtime surface.
 
@@ -54,32 +54,34 @@ node .MOP/scripts/mop-flow.mjs skills list
 node .MOP/scripts/mop-flow.mjs manifest refresh
 ```
 
+The active improvement roadmap lives in `.MOP/flow/ROADMAP.md`.
+
 ## Install
 
 Run this inside the project root:
 
 ```bash
-npx burhan-mop install
-npx burhan-mop doctor
+npx mop-flow install
+npx mop-flow doctor
 ```
 
 Install into another folder:
 
 ```bash
-npx burhan-mop install --target "C:\path\to\project"
+npx mop-flow install --target "C:\path\to\project"
 ```
 
 Overwrite an existing MOP install:
 
 ```bash
-npx burhan-mop install --force
+npx mop-flow install --force
 ```
 
 The installer shows a clean terminal UI by default. For automation, use JSON:
 
 ```bash
-npx burhan-mop install --json
-npx burhan-mop doctor --json
+npx mop-flow install --json
+npx mop-flow doctor --json
 ```
 
 After install, open your AI coding chat in that project and run:
@@ -125,9 +127,9 @@ After install, open your AI coding chat in that project and run:
 ## Useful Commands
 
 ```bash
-npx burhan-mop install
-npx burhan-mop doctor
-npx burhan-mop package
+npx mop-flow install
+npx mop-flow doctor
+npx mop-flow package
 ```
 
 Local project helpers:
@@ -155,13 +157,14 @@ and merges only when the workflow is safe.
 
 | Item | Value |
 | --- | --- |
-| npm package | [`burhan-mop`](https://www.npmjs.com/package/burhan-mop) |
-| latest command | `npx burhan-mop install` |
+| npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
+| latest command | `npx mop-flow install` |
+| legacy alias | `npx burhan-mop install` |
 | GitHub release | [`v0.1.8`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.8) |
 | Node | `>=20` |
 
 ## Links
 
-- npm: https://www.npmjs.com/package/burhan-mop
+- npm: https://www.npmjs.com/package/mop-flow
 - GitHub: https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP
 - Bahasa Melayu README: [README.bm.md](./README.bm.md)

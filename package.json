@@ -1,7 +1,7 @@
 {
-  "name": "burhan-mop",
+  "name": "mop-flow",
   "version": "0.1.8",
-  "description": "MOP portable agent memory core installer and CLI.",
+  "description": "MOP Flow portable agent memory core, provider bridge, installer, and CLI.",
   "type": "module",
   "author": "BURHANDEV ENTERPRISE",
   "homepage": "https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP#readme",

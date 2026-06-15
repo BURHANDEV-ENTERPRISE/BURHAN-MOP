@@ -79,6 +79,7 @@ Before doing anything, read `.MOP/STATE.json` and follow
 - MOP Flow runtime config: `.claude-flow/config.yaml`
 - Antigravity skills: `.agents/skills/`
 
-Installer command: `npx burhan-mop install`.
+Installer command: `npx mop-flow install`.
+Legacy compatibility command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
 `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.

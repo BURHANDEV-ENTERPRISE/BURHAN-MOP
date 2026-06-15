@@ -69,7 +69,8 @@ up when they ask.
 Default skill: `mop-help`. It answers "lepas ni buat apa?", routes the next MOP
 workflow phase, and names the next artifact/gate.
 
-Installer command: `npx burhan-mop install`.
+Installer command: `npx mop-flow install`.
+Legacy compatibility command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
 `npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
 

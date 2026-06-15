@@ -416,8 +416,10 @@
   },
   "installer": {
     "enabled": true,
-    "packageName": "burhan-mop",
-    "command": "npx burhan-mop install",
+    "packageName": "mop-flow",
+    "legacyPackageName": "burhan-mop",
+    "command": "npx mop-flow install",
+    "legacyCommand": "npx burhan-mop install",
     "entrypoint": ".MOP/scripts/burhan-mop.mjs",
     "installTargets": [
       "provider entrypoints",

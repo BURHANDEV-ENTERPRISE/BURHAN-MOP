@@ -412,13 +412,14 @@ node .MOP/scripts/mop-autosycn.mjs memory --actor <codename> --summary "<what ch
 The package installer command is:
 
 ```bash
-npx burhan-mop install [--target <project-folder>] [--force] [--json]
+npx mop-flow install [--target <project-folder>] [--force] [--json]
 ```
 
 The default output is a clean terminal UI. Use `--json` for CI, scripts, and
 other automation that needs machine-readable output.
 
-The short package command works after the package is published to npm. Before
+The short package command works after the package is published to npm. The old
+`npx burhan-mop install` command is a legacy alias while users migrate. Before
 an npm publish, install directly from GitHub:
 
 ```bash
@@ -569,7 +570,7 @@ Only activate deployment after explicit confirmation.
 - `.MOP/scripts/mop-core.mjs` - setup/login/agent helper.
 - `.MOP/scripts/mop-flow.mjs` - provider-neutral skill bridge and runtime status helper.
 - `.MOP/scripts/mop-workflow.mjs` - workflow/help/artifact/readiness/review helper.
-- `.MOP/scripts/burhan-mop.mjs` - installer CLI for `npx burhan-mop install`.
+- `.MOP/scripts/burhan-mop.mjs` - installer CLI for `npx mop-flow install` and legacy `npx burhan-mop install`.
 - `.MOP/scripts/mop-autosycn.mjs` - identity-safe autosycn helper.
 - `.MOP/scripts/mop-auto-deploy.mjs` - opt-in deployment helper.
 - `AGENTS.md` - Codex and provider-neutral entrypoint.
