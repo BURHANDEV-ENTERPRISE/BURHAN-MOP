@@ -160,7 +160,7 @@ and merges only when the workflow is safe.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | latest command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v0.1.8`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.8) |
+| GitHub release | [`v0.1.9`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.1.9) |
 | Node | `>=20` |
 
 ## Links
