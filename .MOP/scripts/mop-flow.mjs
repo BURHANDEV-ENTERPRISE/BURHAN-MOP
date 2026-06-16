@@ -385,6 +385,10 @@ function main() {
   if (command === 'manifest' && subcommand === 'refresh') return manifestRefresh(args);
   if (command === 'bridge' && (!subcommand || subcommand === 'status')) return status(args);
   if (command === 'bridge' && subcommand === 'refresh') return manifestRefresh(args);
+  if (command === 'mcp' && subcommand === 'start') {
+    import('./mop-mcp.mjs');
+    return;
+  }
 
   console.log(`Usage:
   node .MOP/scripts/mop-flow.mjs [tui]
@@ -394,7 +398,8 @@ function main() {
   node .MOP/scripts/mop-flow.mjs manifest print [--json]
   node .MOP/scripts/mop-flow.mjs manifest refresh [--json]
   node .MOP/scripts/mop-flow.mjs bridge status [--json]
-  node .MOP/scripts/mop-flow.mjs bridge refresh [--json]`);
+  node .MOP/scripts/mop-flow.mjs bridge refresh [--json]
+  node .MOP/scripts/mop-flow.mjs mcp start`);
 }
 
 try {

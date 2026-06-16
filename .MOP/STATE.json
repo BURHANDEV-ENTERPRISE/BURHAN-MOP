@@ -208,9 +208,10 @@
         "title": "UX Spec",
         "primaryRole": "ux",
         "partyRoles": [
-          "design",
+          "ux",
           "frontend",
-          "accessibility"
+          "accessibility",
+          "mobile"
         ],
         "artifact": "ux-spec",
         "goal": "Define flows, states, layout behavior, visual references, and accessibility expectations."
@@ -225,7 +226,8 @@
           "database",
           "security",
           "devops",
-          "performance"
+          "performance",
+          "migration"
         ],
         "artifact": "architecture",
         "goal": "Choose the system shape, data contracts, boundaries, dependencies, and deployment path."
@@ -236,8 +238,9 @@
         "primaryRole": "pm",
         "partyRoles": [
           "coder",
-          "qa",
-          "questmaster"
+          "tester",
+          "reviewer",
+          "migration"
         ],
         "artifact": "story",
         "goal": "Break approved scope into implementable tasks with acceptance checks."
@@ -248,8 +251,9 @@
         "primaryRole": "integrity",
         "partyRoles": [
           "architect",
-          "qa",
-          "security"
+          "tester",
+          "security",
+          "orchestrator"
         ],
         "artifact": "readiness-report",
         "goal": "Confirm the work is clear enough to code without guessing."
@@ -262,7 +266,8 @@
           "frontend",
           "backend",
           "database",
-          "qa"
+          "tester",
+          "sandbox"
         ],
         "artifact": "implementation-notes",
         "goal": "Build the approved story with small safe changes and autosycn."
@@ -272,11 +277,12 @@
         "title": "Review",
         "primaryRole": "reviewer",
         "partyRoles": [
-          "qa",
+          "tester",
           "security",
           "performance",
           "ux",
-          "analyst"
+          "browser",
+          "content"
         ],
         "artifact": "review",
         "goal": "Find defects, regressions, missing tests, UX mismatch, and security/performance risks."
@@ -289,8 +295,9 @@
           "github",
           "deploy",
           "reviewer",
-          "recall",
-          "memory"
+          "memory",
+          "content",
+          "workflow-ci"
         ],
         "artifact": "release-notes",
         "goal": "Prepare deploy, handoff, changelog, and merge/release confirmation."
@@ -672,12 +679,6 @@
       "purpose": "User flows, pain points, personas, usability, and product behavior."
     },
     {
-      "role": "design",
-      "title": "UI/UX Designer",
-      "kind": "design",
-      "purpose": "Visual design, layouts, components, accessibility, and interaction polish."
-    },
-    {
       "role": "accessibility",
       "title": "Accessibility Specialist",
       "kind": "quality",
@@ -748,6 +749,65 @@
       "title": "Data Analyst",
       "kind": "thinking",
       "purpose": "Data analysis, performance metrics compilation, trends analysis, and reporting."
+    },
+    {
+      "role": "orchestrator",
+      "title": "Task Orchestrator",
+      "tier": 1,
+      "description": "Decomposes complex tasks, assigns to agents, tracks dependencies, synthesizes results. The air traffic controller for multi-agent sessions.",
+      "superpower": "GOAP planning + dependency graph + result synthesis",
+      "sources": ["ruflo:agent-orchestrator-task", "ruflo:agent-workflow", "ruflo:agent-goal-planner"],
+      "phaseRoles": ["all"]
+    },
+    {
+      "role": "data-ml",
+      "title": "Data & ML Engineer",
+      "tier": 3,
+      "description": "Machine learning model development, training pipelines, evaluation metrics, and deployment config.",
+      "superpower": "ML pipeline + data preprocessing + model evaluation",
+      "sources": ["ruflo:agent-data-ml-model"],
+      "triggers": ["machine learning","ml model","train model","predict","neural network",".ipynb"],
+      "phaseRoles": ["implementation"]
+    },
+    {
+      "role": "migration",
+      "title": "Migration Planner",
+      "tier": 3,
+      "description": "Database schema migration, API version upgrades, system rewrites. Compatibility matrix + rollback plan.",
+      "superpower": "Phased rollout + compatibility matrix + rollback procedure",
+      "sources": ["ruflo:agent-migration-plan"],
+      "triggers": ["migrate","migration","upgrade","rewrite","breaking change"],
+      "phaseRoles": ["architecture", "story"]
+    },
+    {
+      "role": "sandbox",
+      "title": "Sandbox & Environment",
+      "tier": 5,
+      "description": "Isolated execution environment for testing. Create, configure, teardown. Safe code execution.",
+      "superpower": "Environment isolation + lifecycle management + resource monitoring",
+      "sources": ["ruflo:agent-sandbox"],
+      "triggers": ["test environment","staging","isolate","sandbox","e2b"],
+      "phaseRoles": ["implementation", "review"]
+    },
+    {
+      "role": "workflow-ci",
+      "title": "Workflow & CI Integrator",
+      "tier": 6,
+      "description": "GitHub Actions CI/CD pipeline creation, event triggers, job dependencies, artifact caching.",
+      "superpower": "Pipeline generation + matrix testing + workflow automation",
+      "sources": ["ruflo:agent-ops-cicd-github", "ruflo:agent-workflow"],
+      "triggers": ["github actions","ci/cd","pipeline","workflow yml","continuous integration"],
+      "phaseRoles": ["architecture", "release"]
+    },
+    {
+      "role": "content",
+      "title": "Content & Docs Strategist",
+      "tier": 2,
+      "description": "Technical documentation, API docs (OpenAPI), changelog auto-draft from ledger, onboarding guides.",
+      "superpower": "BMAD Paige persona + OpenAPI doc gen + ledger-to-changelog",
+      "sources": ["mop:docs", "bmad:agent-tech-writer"],
+      "bmadPersona": "Paige",
+      "phaseRoles": ["review", "release"]
     }
   ],
   "federation": {

@@ -867,6 +867,10 @@ function login(args) {
   state.lastActiveAt = now();
   appendLedger(state, codename, 'login', 'Member authenticated.');
   writeState(state);
+  
+  // F5.1: SessionStart hook -> auto-populate SESSION_BRIEF.md
+  writeSessionBrief(state, codename);
+
   console.log(`Active member: ${codename}`);
   if (!activeAgentFor(state, codename) && state.agentPolicy?.requiredAfterAuth !== false) {
     console.log(`Agent diperlukan. Jalankan: node .MOP/scripts/mop-core.mjs agent activate --actor ${codename} --role ${state.agentPolicy?.defaultRole || 'core'} --title "${state.agentPolicy?.defaultTitle || 'Core Agent'}" --name "<agent-name>"`);

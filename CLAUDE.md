@@ -1,6 +1,10 @@
 # MOP Flow - Claude Code Configuration
+*(Versi Dwibahasa / Bilingual Version)*
 
-## MOP Authentication Gate - First Action
+## MOP Authentication Gate - First Action / Tindakan Pertama
+
+Sebelum melakukan sebarang kerja dalam workspace ini, baca `.MOP/STATE.json` dan ikuti `.MOP/PROTOCOL.md`.
+Before doing anything in this workspace, read `.MOP/STATE.json` and follow `.MOP/PROTOCOL.md`.
 
 Before doing anything in this workspace, read `.MOP/STATE.json` and
 follow `.MOP/PROTOCOL.md`.
@@ -77,12 +81,9 @@ GitHub source fallback for development builds:
 During `/mop-setup`, ask whether to activate auto-deploy after the Git/GitHub
 identity questions.
 
-## MOP Flow Canonical Layer
+## MOP Flow Canonical Layer / Lapisan Berkanun MOP Flow
 
-MOP Flow is the user-facing system. Ruflo / Claude Flow are upstream runtime
-compatibility names only. Claude Code must still follow MOP auth, Agent Router,
-memory, workflow, readiness, and autosycn before using Claude-native hooks or
-skills.
+MOP Flow is the user-facing system (MOP Flow adalah sistem bersemuka pengguna). Ruflo / Claude Flow are upstream runtime compatibility names only. Claude Code must still follow MOP auth, Agent Router, memory, workflow, readiness, and autosycn before using Claude-native hooks or skills.
 
 ```bash
 node .MOP/scripts/mop-flow.mjs status --json
@@ -92,12 +93,11 @@ node .MOP/scripts/mop-flow.mjs skills list
 - Canonical MCP server name: `mop-flow`.
 - Portable skill source: `.agents/skills/`.
 - Runtime-native skill source: `.claude/skills/`.
-- When a skill must work outside Claude, bridge it through MOP Flow instead of
-  treating Claude hooks or slash commands as universal.
+- When a skill must work outside Claude, bridge it through MOP Flow instead of treating Claude hooks or slash commands as universal.
 
-## Rules
+## Rules / Peraturan Utama
 
-- Do what has been asked; nothing more, nothing less
+- Do what has been asked; nothing more, nothing less (Lakukan apa yang disuruh sahaja)
 - NEVER create files unless absolutely necessary — prefer editing existing files
 - NEVER create documentation files unless explicitly requested
 - Treat the current workspace root as the project root. Do not create a nested

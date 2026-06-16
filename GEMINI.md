@@ -1,13 +1,14 @@
 # MOP Core - Gemini CLI Instructions
+*(Versi Dwibahasa / Bilingual Version)*
 
 Gemini CLI should load this file as project context. The main provider-neutral
-rules are imported below.
+rules are imported below. (Gemini CLI harus memuatkan fail ini sebagai konteks projek. Peraturan utama diimport di bawah)
 
 @./AGENTS.md
 
-## MOP Flow Notes
+## MOP Flow Notes / Nota MOP Flow
 
-- Use MOP Flow as the canonical system name.
+- Use MOP Flow as the canonical system name. (Gunakan MOP Flow sebagai nama sistem utama)
 - Use `.agents/skills/` as the portable skill surface.
 - When a capability exists only in `.claude/skills/`, read it as a MOP Flow
   bridged skill and translate Claude-only hooks/slash commands into Gemini CLI
@@ -18,10 +19,10 @@ rules are imported below.
 node .MOP/scripts/mop-flow.mjs status --json
 ```
 
-## Gemini-Specific Notes
+## Gemini-Specific Notes / Nota Khusus Gemini
 
 - First action still applies: read `.MOP/STATE.json` and follow
-  `.MOP/PROTOCOL.md`.
+  `.MOP/PROTOCOL.md`. (Tindakan pertama masih terpakai: baca STATE.json dan ikuti PROTOCOL.md)
 - After authentication, run `mop-core.mjs memory brief --actor <codename>` and
   `mop-core.mjs agent route --actor <codename> --task "<user task>"` before
   answering.

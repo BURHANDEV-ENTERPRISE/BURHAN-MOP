@@ -1,6 +1,10 @@
 # MOP Core - Cross-Agent Instructions
+*(Versi Dwibahasa / Bilingual Version)*
 
-## Authentication Gate - First Action
+## Authentication Gate - First Action / Tindakan Pertama
+
+Sebelum melakukan sebarang kerja dalam workspace ini, baca `.MOP/STATE.json` dan ikuti `.MOP/PROTOCOL.md`.
+Before doing anything in this workspace, read `.MOP/STATE.json` and follow `.MOP/PROTOCOL.md`.
 
 Before doing anything in this workspace, read `.MOP/STATE.json` and
 follow `.MOP/PROTOCOL.md`.
@@ -95,14 +99,14 @@ provider-neutral layer above upstream Ruflo / Claude Flow runtime compatibility.
 It must work across Claude Code, Codex / ChatGPT coding surfaces, Gemini CLI,
 and Google Antigravity. Treat this file as the provider-neutral source of truth.
 
-## Provider Entry Points
+## Provider Entry Points / Titik Masuk Pembekal
 
 - Claude Code: read `CLAUDE.md` and `.claude/settings.json`.
 - Codex / ChatGPT coding agents: read this `AGENTS.md`.
 - Gemini CLI: read `GEMINI.md`, which imports this file, and `.gemini/settings.json`.
 - Antigravity managed agents: read `.agents/AGENTS.md` and `.agents/skills/`.
 
-## MOP Flow Canonical Layer
+## MOP Flow Canonical Layer / Lapisan Berkanun MOP Flow
 
 - User-facing brand: **MOP Flow**.
 - Canonical MCP server name: `mop-flow`.
@@ -116,9 +120,9 @@ node .MOP/scripts/mop-flow.mjs status --json
 node .MOP/scripts/mop-flow.mjs skills list
 ```
 
-## Core Rules
+## Core Rules / Peraturan Utama
 
-- Do what the user asked, with the smallest safe change.
+- Do what the user asked, with the smallest safe change. (Lakukan apa yang disuruh dengan perubahan paling selamat)
 - Always read an existing file before editing it.
 - Treat the current workspace root as the project root. Do not create a nested
   project wrapper like `portfolio/`, `my-app/`, or `<project-name>/`; scaffold
