@@ -52,7 +52,8 @@
     "publish:dry": "npm publish --dry-run",
     "publish:public": "npm publish",
     "prepack": "npm run validate",
-    "prepublishOnly": "npm run quality && npm run doctor"
+    "prepublishOnly": "npm run quality && npm run doctor",
+    "prepare": "node -e \"const fs = require('fs'); if (fs.existsSync('.git/hooks')) { fs.writeFileSync('.git/hooks/pre-commit', '#!/bin/sh' + String.fromCharCode(10) + 'npm run quality' + String.fromCharCode(10), { mode: 511 }); console.log('Pre-commit hook installed.'); }\""
   },
   "files": [
     "bin",
