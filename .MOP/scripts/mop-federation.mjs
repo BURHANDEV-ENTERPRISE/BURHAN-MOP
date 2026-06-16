@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -225,7 +225,10 @@ function main() {
   node .MOP/scripts/mop-federation.mjs push [--remote <remote>] [--branch <branch>]`);
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+const isMain = process.argv[1] && (
+  fileURLToPath(import.meta.url) === resolve(process.argv[1]) ||
+  (existsSync(process.argv[1]) && fileURLToPath(import.meta.url) === realpathSync(process.argv[1]))
+);
 if (isMain) {
   try {
     main();
