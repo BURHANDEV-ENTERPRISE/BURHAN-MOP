@@ -750,6 +750,10 @@
       "purpose": "Data analysis, performance metrics compilation, trends analysis, and reporting."
     }
   ],
+  "federation": {
+    "enabled": false,
+    "directory": ".MOP/memory/shared-ledger"
+  },
   "ledger": [
     {
       "at": "2026-06-11T00:00:00.000Z",

@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { piiScrub, outbound } from './mop-federation.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const coreDir = resolve(here, '..');
@@ -1090,19 +1091,26 @@ function memoryAdd(args) {
   const kind = String(args.kind || 'conversation');
   if (!summary) throw new Error('Missing --summary');
 
-  appendLedger(state, actor, 'memory', summary, agent);
-  const saved = appendMonthlyMemory(state, actor, kind, summary, agent);
+  const isFed = state.federation?.enabled === true;
+  const finalSummary = isFed ? piiScrub(summary) : summary;
+
+  appendLedger(state, actor, 'memory', finalSummary, agent);
+  const saved = appendMonthlyMemory(state, actor, kind, finalSummary, agent);
 
   // Fasa 1.1: Add to BM25 index
   const entryId = `${now()}|${actor}`;
-  addToIndex(state, entryId, summary);
+  addToIndex(state, entryId, finalSummary);
 
   // Fasa 1.2: Append to working memory tier
-  const entry = { at: now(), actor, ...agentLedgerFields(agent), kind, summary };
+  const entry = { at: now(), actor, ...agentLedgerFields(agent), kind, summary: finalSummary };
   appendWorkingMemory(state, entry);
 
   // Fasa 1.2: Auto-promote to facts if referenced >= 3x in 30 days
   maybepromoteToFacts(state, entry);
+
+  if (isFed) {
+    outbound(entry);
+  }
 
   writeState(state);
   console.log(JSON.stringify({
@@ -1110,7 +1118,7 @@ function memoryAdd(args) {
     actor,
     agent: agent.name,
     kind,
-    summary,
+    summary: finalSummary,
     monthlyMemory: saved ? relativeFromRoot(saved.monthlyPath) : 'disabled',
     sessionBrief: relativeFromRoot(sessionBriefPath(state)),
     answerContract: answerContractFor(state, actor, agent)

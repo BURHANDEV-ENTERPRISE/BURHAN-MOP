@@ -249,6 +249,100 @@ try {
     }
   }
 
+  // ─── Suite 4: Federation & PII Scrubber ────────────────────────────────────
+  if (suiteFilter === 'all' || suiteFilter === 'federation') {
+    const fedTarget = mkdtempSync(join(tmpdir(), 'mop-fed-'));
+    try {
+      // Install fresh MOP
+      run('node', ['.MOP/scripts/burhan-mop.mjs', 'install', '--target', fedTarget, '--json']);
+
+      // Setup MOP in solo mode
+      run('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'setup',
+        '--project-name', 'smoke-fed-test',
+        '--name', 'Smoke Tester',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345',
+        '--mode', 'solo',
+        '--conversation-language', 'English',
+        '--coding-language', 'English',
+        '--git-email', 'smoke@test.local',
+        '--git-name', 'Smoke Tester'
+      ], { cwd: fedTarget });
+
+      // Login
+      run('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'login',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345'
+      ], { cwd: fedTarget });
+
+      // Activate agent
+      run('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'agent', 'activate',
+        '--actor', 'smoketester',
+        '--role', 'core',
+        '--title', 'Core Agent',
+        '--name', 'Arif'
+      ], { cwd: fedTarget });
+
+      // Enable federation in target's STATE.json
+      const statePath = join(fedTarget, '.MOP', 'STATE.json');
+      const state = JSON.parse(readFileSync(statePath, 'utf8'));
+      state.federation = { enabled: true, directory: '.MOP/memory/shared-ledger' };
+      writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
+
+      // T4.1: memoryAdd with federation enabled scrubs summary and writes to outbound shared ledger
+      const testSummary = "Test email user@test.com and phone +6012-3456789 and API sk-1234567890123456789012345678901234567890 and IC 990101-14-5566 and card 1111-2222-3333-4444";
+      const addOut = parseJson(run('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'memory', 'add',
+        '--actor', 'smoketester',
+        '--kind', 'conversation',
+        '--summary', testSummary
+      ], { cwd: fedTarget }));
+
+      if (!addOut.ok) throw new Error('T4.1: memory add failed');
+      if (addOut.summary.includes('user@test.com') || addOut.summary.includes('+6012-3456789')) {
+        throw new Error('T4.1: summary was not scrubbed in output');
+      }
+
+      // T4.2: shared-ledger file created and contains scrubbed entry with hash chain
+      const ledgerPath = join(fedTarget, '.MOP/memory/shared-ledger/ledger.jsonl');
+      if (!existsSync(ledgerPath)) {
+        throw new Error('T4.2: shared-ledger ledger.jsonl file not created');
+      }
+
+      const ledgerLines = readFileSync(ledgerPath, 'utf8').split(/\r?\n/).filter(Boolean);
+      if (ledgerLines.length === 0) {
+        throw new Error('T4.2: shared-ledger ledger.jsonl is empty');
+      }
+
+      const ledgerEntry = JSON.parse(ledgerLines[0]);
+      if (ledgerEntry.summary.includes('user@test.com')) {
+        throw new Error('T4.2: shared ledger entry summary was not scrubbed');
+      }
+      if (!ledgerEntry.hash || !ledgerEntry.prev) {
+        throw new Error('T4.2: shared ledger entry missing hash chain fields');
+      }
+
+      // T4.3: mop-federation verify verifies successfully
+      const verifyOut = parseJson(run('node', [join(fedTarget, '.MOP/scripts/mop-federation.mjs'), 'verify'], { cwd: fedTarget }));
+      if (!verifyOut.verified) {
+        throw new Error('T4.3: federation verify failed to verify a clean chain');
+      }
+
+      // T4.4: tampered ledger is caught by verify
+      const originalContent = readFileSync(ledgerPath, 'utf8');
+      const tamperedContent = originalContent.replace('[EMAIL_REDACTED]', 'tampered@email.com');
+      writeFileSync(ledgerPath, tamperedContent, 'utf8');
+
+      const verifyTampered = parseJson(run('node', [join(fedTarget, '.MOP/scripts/mop-federation.mjs'), 'verify'], { cwd: fedTarget }));
+      if (verifyTampered.verified !== false) {
+        throw new Error('T4.4: federation verify failed to detect tampered ledger content');
+      }
+
+      console.log('[suite:federation] OK');
+    } finally {
+      rmSync(fedTarget, { recursive: true, force: true });
+    }
+  }
+
   if (suiteFilter === 'all') {
     console.log('MOP smoke tests OK.');
   }
