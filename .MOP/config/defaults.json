@@ -51,5 +51,9 @@
     "showBanner": true,
     "minimumParticipants": 3,
     "preferredMinimumParticipants": 4
+  },
+  "federation": {
+    "enabled": false,
+    "directory": ".MOP/memory/shared-ledger"
   }
 }
