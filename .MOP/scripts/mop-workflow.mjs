@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,6 +20,64 @@ function readJson(path, fallback = {}) {
 
 function readState() {
   return readJson(statePath);
+}
+
+// ─── Fasa 1.4: Memory integration for relatedDecisions ──────────────────────
+
+function readJsonl(filePath) {
+  if (!existsSync(filePath)) return [];
+  return readFileSync(filePath, 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+    .filter(Boolean);
+}
+
+const STOP_WORDS_WF = new Set([
+  'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'pada', 'ini', 'itu', 'ada',
+  'dengan', 'oleh', 'akan', 'juga', 'sudah', 'saya', 'awak', 'kita', 'dia',
+  'the', 'a', 'an', 'is', 'it', 'in', 'on', 'at', 'to', 'for', 'of', 'and',
+  'or', 'but', 'not', 'this', 'that', 'was', 'are', 'be', 'been', 'has'
+]);
+
+function tokenizeWF(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !STOP_WORDS_WF.has(t));
+}
+
+function simpleRelevance(entry, queryTokens) {
+  const tokens = tokenizeWF(entry.summary || '');
+  return queryTokens.reduce((score, qt) => {
+    return tokens.includes(qt) ? score + 1 : score;
+  }, 0);
+}
+
+function relatedDecisionsFor(state, task, limit = 3) {
+  if (!task) return [];
+  const queryTokens = tokenizeWF(task);
+  if (!queryTokens.length) return [];
+  const memDir = join(rootDir, state.memoryPolicy?.directory || '.MOP/memory');
+  if (!existsSync(memDir)) return [];
+
+  // Read working.jsonl (current session) + facts.json (promoted) + last 2 episodic months
+  const working = readJsonl(join(memDir, 'working.jsonl'));
+  const facts = (() => { try { return JSON.parse(readFileSync(join(memDir, 'facts.json'), 'utf8') || '[]'); } catch { return []; } })();
+  const monthFiles = readdirSync(memDir)
+    .filter((n) => /^\d{4}-\d{2}\.jsonl$/.test(n))
+    .sort()
+    .slice(-2);
+  const episodic = monthFiles.flatMap((f) => readJsonl(join(memDir, f)));
+  const allEntries = [...facts, ...working, ...episodic];
+
+  return allEntries
+    .map((e) => ({ ...e, _rel: simpleRelevance(e, queryTokens) }))
+    .filter((e) => e._rel > 0)
+    .sort((a, b) => b._rel - a._rel)
+    .slice(0, limit)
+    .map(({ _rel, ...e }) => e);
 }
 
 function writeState(state) {
@@ -120,13 +179,16 @@ function status(args) {
   const state = readState();
   const actor = args.actor ? slug(args.actor) : '';
   const config = mergedConfig(state, actor);
-  const { phase, nextPhase } = currentAndNext(state, String(args.task || ''));
+  const task = String(args.task || '');
+  const { phase, nextPhase } = currentAndNext(state, task);
+  const relatedDecisions = relatedDecisionsFor(state, task);
   console.log(JSON.stringify({
     workflow: state.workflow?.name || 'MOP Workflow',
     enabled: state.workflow?.enabled !== false,
     currentPhase: state.workflow?.currentPhase,
     suggestedPhase: phase,
     nextPhase,
+    relatedDecisions,
     customization: config.workflow || {},
     artifacts: {
       directory: state.artifacts?.directory || '.MOP/artifacts',
@@ -148,6 +210,7 @@ function help(args) {
   const readinessRequired = ['readiness', 'implementation'].includes(phase?.id) || /\b(code|implement|build|fix)\b/i.test(task);
   const nextArtifact = phase?.artifact || 'product-brief';
   const nextCategory = artifactCategoryFor(state, args, nextArtifact);
+  const relatedDecisions = relatedDecisionsFor(state, task);
   console.log(JSON.stringify({
     question: task || 'lepas ni buat apa?',
     answer: phase ? `Next best step: ${phase.title}.` : 'Next best step: capture the idea.',
@@ -160,7 +223,8 @@ function help(args) {
     nextCommand: `node .MOP/scripts/mop-workflow.mjs artifact create --actor ${actor || '<codename>'} --type ${nextArtifact} --title "<title>"`,
     readinessRequired,
     readinessCommand: `node .MOP/scripts/mop-workflow.mjs gate readiness --actor ${actor || '<codename>'} --task "<task>"`,
-    nextPhase: nextPhase?.id || null
+    nextPhase: nextPhase?.id || null,
+    relatedDecisions
   }, null, 2));
 }
 

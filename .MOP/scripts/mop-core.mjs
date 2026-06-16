@@ -223,6 +223,139 @@ function latestMemoryEntries(state, limit = memoryPolicy(state).recentLimit || 2
     .slice(-limit);
 }
 
+// ─── Fasa 1.1: BM25 Zero-Dep Engine ────────────────────────────────────────
+
+const STOP_WORDS = new Set([
+  // Melayu
+  'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'pada', 'ini', 'itu', 'ada',
+  'dengan', 'oleh', 'akan', 'juga', 'sudah', 'saya', 'awak', 'kita', 'dia',
+  'bagi', 'boleh', 'tidak', 'tak', 'atau', 'tetapi', 'jika', 'bila',
+  // English
+  'the', 'a', 'an', 'is', 'it', 'in', 'on', 'at', 'to', 'for', 'of', 'and',
+  'or', 'but', 'not', 'this', 'that', 'was', 'are', 'be', 'been', 'has',
+  'have', 'had', 'do', 'did', 'by', 'with', 'as', 'from', 'into', 'via'
+]);
+
+function tokenize(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !STOP_WORDS.has(t));
+}
+
+function bm25Score(tf, df, docCount, docLen, avgDocLen, k1 = 1.5, b = 0.75) {
+  const idf = Math.log((docCount - df + 0.5) / (df + 0.5) + 1);
+  const norm = tf * (k1 + 1) / (tf + k1 * (1 - b + b * (docLen / avgDocLen)));
+  return idf * norm;
+}
+
+function memoryIndexPath(state) {
+  return join(memoryDirFor(state), 'index.json');
+}
+
+function workingMemoryPath(state) {
+  return join(memoryDirFor(state), 'working.jsonl');
+}
+
+function factsPath(state) {
+  return join(memoryDirFor(state), 'facts.json');
+}
+
+function readIndex(state) {
+  const p = memoryIndexPath(state);
+  if (!existsSync(p)) return { docs: {}, df: {}, docCount: 0, avgDocLen: 0 };
+  try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return { docs: {}, df: {}, docCount: 0, avgDocLen: 0 }; }
+}
+
+function writeIndex(state, index) {
+  mkdirSync(memoryDirFor(state), { recursive: true });
+  writeFileSync(memoryIndexPath(state), JSON.stringify(index), 'utf8');
+}
+
+function addToIndex(state, entryId, text) {
+  const index = readIndex(state);
+  const tokens = tokenize(text);
+  if (!tokens.length) return;
+  const tf = {};
+  for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
+  index.docs[entryId] = { tf, len: tokens.length };
+  for (const t of Object.keys(tf)) index.df[t] = (index.df[t] || 0) + 1;
+  index.docCount = Object.keys(index.docs).length;
+  const totalLen = Object.values(index.docs).reduce((s, d) => s + d.len, 0);
+  index.avgDocLen = index.docCount > 0 ? totalLen / index.docCount : 1;
+  writeIndex(state, index);
+}
+
+function bm25Search(state, query, limit = 10) {
+  const index = readIndex(state);
+  if (!index.docCount) return [];
+  const qTokens = tokenize(query);
+  if (!qTokens.length) return [];
+  const scores = {};
+  for (const t of qTokens) {
+    const df = index.df[t] || 0;
+    if (!df) continue;
+    for (const [docId, doc] of Object.entries(index.docs)) {
+      const tf = doc.tf[t] || 0;
+      if (!tf) continue;
+      scores[docId] = (scores[docId] || 0) + bm25Score(tf, df, index.docCount, doc.len, index.avgDocLen);
+    }
+  }
+  return Object.entries(scores)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit)
+    .map(([docId, score]) => ({ docId, score: Math.round(score * 1000) / 1000 }));
+}
+
+// ─── Fasa 1.2: 3-Tier Memory Helpers ───────────────────────────────────────
+
+function appendWorkingMemory(state, entry) {
+  const p = workingMemoryPath(state);
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, `${JSON.stringify(entry)}\n`, { encoding: 'utf8', flag: 'a' });
+}
+
+function readFacts(state) {
+  const p = factsPath(state);
+  if (!existsSync(p)) return [];
+  try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return []; }
+}
+
+function maybepromoteToFacts(state, entry) {
+  // Auto-promote: if summary appears in index with docCount refs > 3 in last 30 days
+  const facts = readFacts(state);
+  const alreadyFact = facts.some((f) => f.summary === entry.summary);
+  if (alreadyFact) return;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const recent = latestMemoryEntries(state, 200)
+    .filter((e) => e.at >= thirtyDaysAgo && e.summary === entry.summary);
+  if (recent.length >= 3) {
+    facts.push({ ...entry, promotedAt: now(), tier: 'fact' });
+    const p = factsPath(state);
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, JSON.stringify(facts, null, 2), 'utf8');
+  }
+}
+
+// ─── Fasa 1.3: All-tier memory reader for search ───────────────────────────
+
+function allMemoryEntries(state) {
+  const episodic = [];
+  for (const month of memoryMonths(state)) {
+    episodic.push(...readJsonl(monthlyMemoryPath(state, month)));
+  }
+  const working = readJsonl(workingMemoryPath(state));
+  const facts = readFacts(state);
+  const seen = new Set();
+  const result = [];
+  for (const e of [...facts, ...working, ...episodic]) {
+    const key = `${e.at}|${e.summary}`;
+    if (!seen.has(key)) { seen.add(key); result.push(e); }
+  }
+  return result.sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
+}
+
 function answerContractFor(state, actor, agent = activeAgentFor(state, actor)) {
   const policy = answerPolicy(state);
   const format = policy.visibleAgentFormat || 'agent: <agent-name> (<agent-role>) to <user>';
@@ -959,8 +1092,18 @@ function memoryAdd(args) {
 
   appendLedger(state, actor, 'memory', summary, agent);
   const saved = appendMonthlyMemory(state, actor, kind, summary, agent);
-  // TODO(Phase 3): Implement Hybrid Vector Memory chunking and indexing here
-  // e.g. generate vector embedding for `summary` and store in .MOP/memory/vector_index/
+
+  // Fasa 1.1: Add to BM25 index
+  const entryId = `${now()}|${actor}`;
+  addToIndex(state, entryId, summary);
+
+  // Fasa 1.2: Append to working memory tier
+  const entry = { at: now(), actor, ...agentLedgerFields(agent), kind, summary };
+  appendWorkingMemory(state, entry);
+
+  // Fasa 1.2: Auto-promote to facts if referenced >= 3x in 30 days
+  maybepromoteToFacts(state, entry);
+
   writeState(state);
   console.log(JSON.stringify({
     ok: true,
@@ -987,8 +1130,45 @@ function memoryBrief(args) {
   const agent = activeAgentFor(state, actor);
   const month = String(args.month || monthKey());
   const limit = Number(args.limit || memoryPolicy(state).recentLimit || 20);
+  const query = String(args.query || '').trim();
+  // Fasa 1.3: role scoping
+  const roleFilter = String(args.role || '').trim().toLowerCase();
+
+  let recentEntries;
+  if (query) {
+    // Fasa 1.1: BM25 ranked search
+    const ranked = bm25Search(state, query, limit);
+    const allEntries = allMemoryEntries(state);
+    // Map docIds (at|actor keys) back to entries — fallback to recency if no index hits
+    if (ranked.length > 0) {
+      recentEntries = ranked
+        .map(({ docId, score }) => {
+          const [at, entryActor] = docId.split('|');
+          const found = allEntries.find((e) => e.at.startsWith(at.slice(0, 19)) && e.actor === entryActor);
+          return found ? { ...found, _score: score } : null;
+        })
+        .filter(Boolean);
+    } else {
+      // Fallback to recency if index empty
+      recentEntries = latestMemoryEntries(state, limit);
+    }
+  } else {
+    recentEntries = latestMemoryEntries(state, limit);
+  }
+
+  // Fasa 1.3: role scoping — filter by agent role or actor, unless 'shared' tag
+  if (roleFilter) {
+    recentEntries = recentEntries.filter((e) => {
+      const matchesRole = e.agentRole?.toLowerCase() === roleFilter;
+      const matchesActor = e.actor?.toLowerCase() === roleFilter;
+      const isShared = (e.tags || []).includes('shared');
+      return matchesRole || matchesActor || isShared;
+    });
+  }
+
   const currentEntries = readJsonl(monthlyMemoryPath(state, month)).slice(-limit);
-  const recentEntries = latestMemoryEntries(state, limit);
+  const facts = readFacts(state);
+
   if (agent) writeSessionBrief(state, actor);
   console.log(JSON.stringify({
     ok: true,
@@ -1001,11 +1181,16 @@ function memoryBrief(args) {
     } : null,
     answerContract: answerContractFor(state, actor, agent),
     memory: {
+      tier: query ? 'bm25-ranked' : roleFilter ? 'role-scoped' : 'recency',
+      query: query || null,
+      roleFilter: roleFilter || null,
       month,
       monthPath: relativeFromRoot(monthlyMemoryPath(state, month)),
       sessionBrief: relativeFromRoot(sessionBriefPath(state)),
       currentMonthEntries: currentEntries,
-      recentEntries
+      recentEntries,
+      facts: facts.slice(-5),
+      indexSize: readIndex(state).docCount
     },
     next: agent
       ? 'Use answerContract.firstLine before answering, then save memory after meaningful work.'
@@ -1015,6 +1200,51 @@ function memoryBrief(args) {
 
 function memoryRestore(args) {
   return memoryBrief(args);
+}
+
+// Fasa 1.1: memorySearch — standalone BM25 search command
+function memorySearch(args) {
+  const state = readState();
+  if (!state.initialized) throw new Error('MOP is not initialized.');
+  const actor = slug(String(args.actor || state.activeMember || ''));
+  if (!actor) throw new Error('Missing --actor');
+  if (!state.members?.[actor]) throw new Error('Unknown actor.');
+  enforceSessionTimeout(state, actor);
+  const query = String(args.query || args._?.join(' ') || '').trim();
+  if (!query) throw new Error('Missing --query');
+  const limit = Number(args.limit || 10);
+  const roleFilter = String(args.role || '').trim().toLowerCase();
+
+  const ranked = bm25Search(state, query, limit * 3);
+  const allEntries = allMemoryEntries(state);
+
+  let results = ranked
+    .map(({ docId, score }) => {
+      const [at, entryActor] = docId.split('|');
+      const found = allEntries.find((e) => e.at.startsWith(at.slice(0, 19)) && e.actor === entryActor);
+      return found ? { ...found, _score: score } : null;
+    })
+    .filter(Boolean);
+
+  if (roleFilter) {
+    results = results.filter((e) => {
+      const matchesRole = e.agentRole?.toLowerCase() === roleFilter;
+      const matchesActor = e.actor?.toLowerCase() === roleFilter;
+      const isShared = (e.tags || []).includes('shared');
+      return matchesRole || matchesActor || isShared;
+    });
+  }
+
+  results = results.slice(0, limit);
+
+  console.log(JSON.stringify({
+    ok: true,
+    query,
+    roleFilter: roleFilter || null,
+    count: results.length,
+    indexSize: readIndex(state).docCount,
+    results
+  }, null, 2));
 }
 
 function memberGitIdentity(args) {
@@ -1206,6 +1436,7 @@ function main() {
   if (command === 'memory' && subcommand === 'add') return memoryAdd(args);
   if (command === 'memory' && subcommand === 'brief') return memoryBrief(args);
   if (command === 'memory' && subcommand === 'restore') return memoryRestore(args);
+  if (command === 'memory' && subcommand === 'search') return memorySearch(args);
 
   console.log(`Usage:
   node .MOP/scripts/mop-core.mjs status
@@ -1220,9 +1451,10 @@ function main() {
   node .MOP/scripts/mop-core.mjs agent route --actor CODE --task "task text"
   node .MOP/scripts/mop-core.mjs agent list
   node .MOP/scripts/mop-core.mjs browser preflight
-  node .MOP/scripts/mop-core.mjs memory brief --actor CODE [--month YYYY-MM]
+  node .MOP/scripts/mop-core.mjs memory brief --actor CODE [--month YYYY-MM] [--query TEXT] [--role ROLE]
   node .MOP/scripts/mop-core.mjs memory add --actor CODE --kind conversation --summary "what happened"
-  node .MOP/scripts/mop-core.mjs memory restore --actor CODE`);
+  node .MOP/scripts/mop-core.mjs memory restore --actor CODE
+  node .MOP/scripts/mop-core.mjs memory search --actor CODE --query TEXT [--role ROLE] [--limit N]`);
 }
 
 try {
