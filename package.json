@@ -1,7 +1,7 @@
 {
   "name": "mop-flow",
-  "version": "0.2.0",
-  "description": "MOP Flow portable agent memory core, provider bridge, installer, and CLI.",
+  "version": "1.0.0-rc.1",
+  "description": "MOP Flow — portable agent memory core, workflow engine, and provider bridge for Claude, Codex, Gemini, and Antigravity.",
   "type": "module",
   "author": "BURHANDEV ENTERPRISE",
   "homepage": "https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP#readme",
@@ -25,7 +25,8 @@
     "workflow",
     "bmad",
     "autosync",
-    "mcp"
+    "mcp",
+    "cross-platform"
   ],
   "engines": {
     "node": ">=20"
@@ -44,11 +45,14 @@
     "workflow": "node .MOP/scripts/mop-workflow.mjs status",
     "doctor": "node .MOP/scripts/burhan-mop.mjs doctor",
     "test": "node .MOP/scripts/mop-smoke-test.mjs",
+    "test:memory": "node .MOP/scripts/mop-smoke-test.mjs --suite memory",
+    "lint": "node .MOP/scripts/mop-core.mjs validate --strict",
+    "quality": "npm run lint && npm run test",
     "pack:dry": "npm pack --dry-run",
     "publish:dry": "npm publish --dry-run",
     "publish:public": "npm publish",
     "prepack": "npm run validate",
-    "prepublishOnly": "npm run validate && npm run doctor && npm test"
+    "prepublishOnly": "npm run quality && npm run doctor"
   },
   "files": [
     "bin",
@@ -59,7 +63,6 @@
     ".MOP",
     ".agents",
     ".claude",
-    ".claude-flow",
     ".codex",
     ".gemini",
     ".mcp.json"

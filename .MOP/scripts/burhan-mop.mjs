@@ -23,10 +23,10 @@ const installEntries = [
   '.MOP',
   '.agents',
   '.claude',
-  '.claude-flow',
   '.codex',
   '.gemini',
-  '.mcp.json'
+  '.mcp.json',
+  'bin/mop-detect-run.mjs'
 ];
 const doctorEntries = [
   'AGENTS.md',
@@ -43,14 +43,13 @@ const doctorEntries = [
   '.MOP/scripts/mop-autosycn.mjs',
   '.MOP/scripts/mop-auto-deploy.mjs',
   '.MOP/scripts/mop-smoke-test.mjs',
+  'bin/mop-detect-run.mjs',
   '.agents/AGENTS.md',
   '.agents/skills/mop-help/SKILL.md',
   '.agents/skills/mop-flow/SKILL.md',
   '.agents/skills/autosycn/SKILL.md',
   '.agents/skills/auto-deploy/SKILL.md',
   '.claude/settings.json',
-  '.claude-flow/config.yaml',
-  '.claude-flow/CAPABILITIES.md',
   '.claude/skills/mop-help/SKILL.md',
   '.claude/skills/mop-flow/SKILL.md',
   '.claude/skills/autosycn/SKILL.md',
