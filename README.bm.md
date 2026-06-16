@@ -86,12 +86,12 @@ Selepas install, buka AI coding chat dalam project itu dan jalankan:
 | Fungsi | Apa dia buat |
 | --- | --- |
 | Auth Gate | First action mesti setup/login. AI tidak terus bekerja sebelum gate lulus. |
-| Agent Router | Pilih satu primary agent dan tambah support agent bila perlu. |
+| Agent Router | 32 ejen khusus tersedia via `.MOP/STATE.json`. Pilih satu primary agent dan tambah support agent bila perlu. |
 | Party Mode | Tunjuk perbincangan agent-to-agent untuk keputusan multi-role. |
 | MOP Flow | Skill bridge dan MCP runtime wrapper neutral provider untuk Claude, Codex, Gemini, dan Antigravity. |
-| MOP Workflow | Flow inspirasi BMAD dari idea sampai release dengan readiness gate. |
+| MOP Workflow | Flow inspirasi BMAD 10-Fasa dari idea sampai release dengan readiness gate. |
 | Artifacts | Simpan plan, spec, review, dan release notes dalam `.MOP/artifacts/`. |
-| Autosycn | Commit dan push guna identiti user sebenar, bukan identiti AI tool. |
+| Autosync | Commit dan push guna identiti user sebenar, bukan identiti AI tool. |
 | Auto Deploy | Setup optional untuk GitHub, Docker, dan Vercel. |
 
 ## Flow Sesi Pertama
@@ -118,6 +118,7 @@ node .MOP/scripts/mop-core.mjs validate
 node .MOP/scripts/mop-flow.mjs status
 node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<task>"
 node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<apa berubah>"
+node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) server
 ```
 
 ## Workflow Team
@@ -138,7 +139,7 @@ dan merge hanya bila workflow selamat.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v0.2.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.2.0) |
+| GitHub release | [`v1.0.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v1.0.0) |
 | Node | `>=20` |
 
 ## Links

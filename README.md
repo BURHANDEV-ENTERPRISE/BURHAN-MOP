@@ -86,12 +86,12 @@ After install, open your AI coding chat in that project and run:
 | Feature | What it does |
 | --- | --- |
 | Auth Gate | First action is always setup/login. No work starts before the gate passes. |
-| Agent Router | Picks one primary agent and adds support agents only when useful. |
+| Agent Router | 32 specialized agents available via `.MOP/STATE.json`. Picks one primary agent and adds support agents only when useful. |
 | Party Mode | Shows visible agent-to-agent discussion for multi-role decisions. |
 | MOP Flow | Provider-neutral skill bridge and MCP runtime wrapper across Claude, Codex, Gemini, and Antigravity. |
-| MOP Workflow | BMAD-inspired flow from idea to release with readiness checks. |
+| MOP Workflow | BMAD-inspired 10-phase flow from idea to release with readiness gates. |
 | Artifacts | Keeps plans, specs, reviews, and release notes under `.MOP/artifacts/`. |
-| Autosycn | Commits and pushes as the real user, not as the AI tool identity. |
+| Autosync | Commits and pushes as the real user, not as the AI tool identity. |
 | Auto Deploy | Optional setup path for GitHub, Docker, and Vercel. |
 
 ## First Session Flow
@@ -118,6 +118,7 @@ node .MOP/scripts/mop-core.mjs validate
 node .MOP/scripts/mop-flow.mjs status
 node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<task>"
 node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
+node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) server
 ```
 
 ## Team Workflow
@@ -138,7 +139,7 @@ and merges only when the workflow is safe.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | latest command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v0.2.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v0.2.0) |
+| GitHub release | [`v1.0.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v1.0.0) |
 | Node | `>=20` |
 
 ## Links
