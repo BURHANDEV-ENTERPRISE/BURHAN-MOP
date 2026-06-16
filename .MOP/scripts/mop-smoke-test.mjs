@@ -337,6 +337,34 @@ try {
         throw new Error('T4.4: federation verify failed to detect tampered ledger content');
       }
 
+      // T4.5: agent route valid role
+      const routeOut = parseJson(run('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'agent', 'route',
+        '--actor', 'smoketester',
+        '--task', 'code a backend endpoint'
+      ], { cwd: fedTarget }));
+      if (!routeOut.route || !routeOut.route.primaryRole) {
+        throw new Error('T4.5: agent route expected valid route.primaryRole');
+      }
+
+      // T4.6: workflow phase set
+      run('node', [join(fedTarget, '.MOP/scripts/mop-workflow.mjs'), 'phase', 'set',
+        '--actor', 'smoketester',
+        '--phase', 'prd'
+      ], { cwd: fedTarget });
+      const updatedState = JSON.parse(readFileSync(join(fedTarget, '.MOP/STATE.json'), 'utf8'));
+      if (updatedState.workflow.currentPhase !== 'prd') {
+        throw new Error('T4.6: workflow phase set failed to update state');
+      }
+
+      // T4.7: hashPassword + verifyPassword roundtrip
+      const wrongLoginResult = spawnSync('node', [join(fedTarget, '.MOP/scripts/mop-core.mjs'), 'login',
+        '--codename', 'smoketester',
+        '--password', 'wrongpassword'
+      ], { cwd: fedTarget, encoding: 'utf8' });
+      if (wrongLoginResult.status === 0) {
+        throw new Error('T4.7: expected login with wrong password to fail');
+      }
+
       console.log('[suite:federation] OK');
     } finally {
       rmSync(fedTarget, { recursive: true, force: true });
