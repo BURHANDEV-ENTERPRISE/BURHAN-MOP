@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -154,6 +154,13 @@ function phaseById(state, id) {
   return (state.workflow?.phases || []).find((phase) => phase.id === id) || null;
 }
 
+function getPhaseOrder(state, profileName) {
+  if (profileName && state.workflow?.profiles?.[profileName]?.phaseOrder) {
+    return state.workflow.profiles[profileName].phaseOrder;
+  }
+  return state.workflow?.phaseOrder || [];
+}
+
 function inferPhase(state, task) {
   const text = task.toLowerCase();
   if (/\b(deploy|release|vercel|docker|publish)\b/.test(text)) return 'release';
@@ -166,10 +173,16 @@ function inferPhase(state, task) {
   return state.workflow?.currentPhase || state.workflow?.phaseOrder?.[0] || 'idea';
 }
 
-function currentAndNext(state, task = '') {
-  const phaseId = task ? inferPhase(state, task) : (state.workflow?.currentPhase || state.workflow?.phaseOrder?.[0] || 'idea');
+function currentAndNext(state, task = '', profileName = '') {
+  const order = getPhaseOrder(state, profileName);
+  let phaseId = task ? inferPhase(state, task) : (state.workflow?.currentPhase || order[0] || 'idea');
+  if (!order.includes(phaseId)) {
+    if (phaseId === 'prd' || phaseId === 'ux-spec') {
+      if (order.includes('brief')) phaseId = 'brief';
+      else if (order.includes('architecture')) phaseId = 'architecture';
+    }
+  }
   const phase = phaseById(state, phaseId) || phaseById(state, 'idea');
-  const order = state.workflow?.phaseOrder || [];
   const index = Math.max(0, order.indexOf(phase?.id));
   const nextPhase = phaseById(state, order[index + 1]) || null;
   return { phase, nextPhase };
@@ -180,12 +193,14 @@ function status(args) {
   const actor = args.actor ? slug(args.actor) : '';
   const config = mergedConfig(state, actor);
   const task = String(args.task || '');
-  const { phase, nextPhase } = currentAndNext(state, task);
+  const profileName = args.profile || '';
+  const { phase, nextPhase } = currentAndNext(state, task, profileName);
   const relatedDecisions = relatedDecisionsFor(state, task);
   console.log(JSON.stringify({
     workflow: state.workflow?.name || 'MOP Workflow',
     enabled: state.workflow?.enabled !== false,
     currentPhase: state.workflow?.currentPhase,
+    profile: profileName || 'default',
     suggestedPhase: phase,
     nextPhase,
     relatedDecisions,
@@ -206,14 +221,19 @@ function help(args) {
   const actor = args.actor ? slug(args.actor) : '';
   if (actor) actorAllowed(state, actor);
   const task = String(args.task || args._?.join(' ') || '');
-  const { phase, nextPhase } = currentAndNext(state, task);
-  const readinessRequired = ['readiness', 'implementation'].includes(phase?.id) || /\b(code|implement|build|fix)\b/i.test(task);
+  const profileName = args.profile || '';
+  const { phase, nextPhase } = currentAndNext(state, task, profileName);
+  const profileObj = profileName ? state.workflow?.profiles?.[profileName] : null;
+  const readinessRequired = (profileObj?.mandatoryReadiness === true) || 
+                            ['readiness', 'implementation'].includes(phase?.id) || 
+                            /\b(code|implement|build|fix)\b/i.test(task);
   const nextArtifact = phase?.artifact || 'product-brief';
   const nextCategory = artifactCategoryFor(state, args, nextArtifact);
   const relatedDecisions = relatedDecisionsFor(state, task);
   console.log(JSON.stringify({
     question: task || 'lepas ni buat apa?',
     answer: phase ? `Next best step: ${phase.title}.` : 'Next best step: capture the idea.',
+    profile: profileName || 'default',
     phase: phase?.id || 'idea',
     leadAgentRole: phase?.primaryRole || 'planner',
     partyRoles: phase?.partyRoles || [],
@@ -222,7 +242,7 @@ function help(args) {
     nextArtifactPathPattern: `${state.artifacts?.directory || '.MOP/artifacts'}/${nextCategory}/<artifact-slug>/${nextArtifact}.md`,
     nextCommand: `node .MOP/scripts/mop-workflow.mjs artifact create --actor ${actor || '<codename>'} --type ${nextArtifact} --title "<title>"`,
     readinessRequired,
-    readinessCommand: `node .MOP/scripts/mop-workflow.mjs gate readiness --actor ${actor || '<codename>'} --task "<task>"`,
+    readinessCommand: `node .MOP/scripts/mop-workflow.mjs gate readiness --actor ${actor || '<codename>'} --task "<task>"${profileName ? ` --profile ${profileName}` : ''}`,
     nextPhase: nextPhase?.id || null,
     relatedDecisions
   }, null, 2));
@@ -313,7 +333,30 @@ function readiness(args) {
   actorAllowed(state, actor);
   const task = String(args.task || args._?.join(' ') || '');
   const artifact = String(args.artifact || '');
+  const profileName = args.profile || '';
+  const { phase } = currentAndNext(state, task, profileName);
   const text = `${task}\n${artifact && existsSync(join(rootDir, artifact)) ? readFileSync(join(rootDir, artifact), 'utf8') : ''}`.toLowerCase();
+  
+  let isStale = false;
+  if (artifact) {
+    const artPath = resolve(rootDir, artifact);
+    if (existsSync(artPath)) {
+      try {
+        const stat = statSync(artPath);
+        const mtimeSec = stat.mtimeMs / 1000;
+        const gitLog = spawnSync('git', ['log', '-1', '--format=%ct'], { cwd: rootDir, encoding: 'utf8' });
+        if (gitLog.status === 0 && gitLog.stdout) {
+          const lastCommitSec = parseInt(gitLog.stdout.trim(), 10);
+          if (!isNaN(lastCommitSec) && (lastCommitSec - mtimeSec) > 7 * 24 * 3600) {
+            isStale = true;
+          }
+        }
+      } catch (err) {
+        // Ignore
+      }
+    }
+  }
+
   const checks = state.readinessGate?.checks || [];
   const missing = [];
   const passed = [];
@@ -331,16 +374,67 @@ function readiness(args) {
     if (ok) passed.push(check);
     else missing.push(check);
   }
-  const status = missing.length === 0 ? 'ready' : missing.length <= 3 ? 'needs-clarity' : 'blocked';
+
+  if (isStale) {
+    missing.push('artifact-freshness');
+  }
+
+  let status = missing.length === 0 ? 'ready' : missing.length <= 3 ? 'needs-clarity' : 'blocked';
+  if (phase?.id === 'implementation' && isStale) {
+    status = 'blocked';
+  }
+
   console.log(JSON.stringify({
     status,
     canCode: status === 'ready',
+    stale: isStale,
+    profile: profileName || 'default',
     passed,
     missing,
     questions: missing.map((check) => `Clarify ${check.replaceAll('-', ' ')}.`),
     next: status === 'ready'
       ? 'Proceed to implementation with autosycn.'
       : 'Ask clarification or create/update the required artifact before coding.'
+  }, null, 2));
+}
+
+function driftCheck(args) {
+  const state = readState();
+  const actor = slug(requireArg(args, 'actor'));
+  actorAllowed(state, actor);
+  
+  const profileName = args.profile || '';
+  const phaseOrder = getPhaseOrder(state, profileName);
+  
+  const ledger = state.ledger || [];
+  const visited = [];
+  for (const entry of ledger) {
+    if (entry.kind === 'workflow-phase') {
+      const match = String(entry.summary || '').match(/Set MOP workflow phase to (\w+)\.?/);
+      if (match && match[1]) {
+        visited.push(match[1]);
+      }
+    }
+  }
+  
+  const currentPhase = state.workflow?.currentPhase || phaseOrder[0] || 'idea';
+  const currIdx = phaseOrder.indexOf(currentPhase);
+  
+  const skippedPhases = [];
+  if (currIdx > 0) {
+    for (let i = 0; i < currIdx; i++) {
+      const p = phaseOrder[i];
+      if (!visited.includes(p)) {
+        skippedPhases.push(p);
+      }
+    }
+  }
+  
+  const drifted = skippedPhases.length > 0;
+  console.log(JSON.stringify({
+    drifted,
+    skippedPhases,
+    ledgerPath: statePath
   }, null, 2));
 }
 
@@ -392,16 +486,18 @@ function main() {
   if (command === 'gate' && subcommand === 'readiness') return readiness(args);
   if (command === 'review' && subcommand === 'adversarial') return adversarialReview(args);
   if (command === 'config' && subcommand === 'show') return configShow(args);
+  if (command === 'drift' && subcommand === 'check') return driftCheck(args);
 
   console.log(`Usage:
-  node .MOP/scripts/mop-workflow.mjs status [--actor CODE] [--task TEXT]
-  node .MOP/scripts/mop-workflow.mjs help --actor CODE --task "what user asked"
-  node .MOP/scripts/mop-workflow.mjs next --actor CODE --task "what user asked"
+  node .MOP/scripts/mop-workflow.mjs status [--actor CODE] [--task TEXT] [--profile NAME]
+  node .MOP/scripts/mop-workflow.mjs help --actor CODE --task "what user asked" [--profile NAME]
+  node .MOP/scripts/mop-workflow.mjs next --actor CODE --task "what user asked" [--profile NAME]
   node .MOP/scripts/mop-workflow.mjs phase set --actor CODE --phase prd
   node .MOP/scripts/mop-workflow.mjs artifact create --actor CODE --type prd --title "Title" [--category plan] [--dry-run]
-  node .MOP/scripts/mop-workflow.mjs gate readiness --actor CODE --task "task" [--artifact path]
+  node .MOP/scripts/mop-workflow.mjs gate readiness --actor CODE --task "task" [--artifact path] [--profile NAME]
   node .MOP/scripts/mop-workflow.mjs review adversarial --actor CODE --target "plan or file" [--write]
-  node .MOP/scripts/mop-workflow.mjs config show [--actor CODE]`);
+  node .MOP/scripts/mop-workflow.mjs config show [--actor CODE]
+  node .MOP/scripts/mop-workflow.mjs drift check --actor CODE [--profile NAME]`);
 }
 
 try {

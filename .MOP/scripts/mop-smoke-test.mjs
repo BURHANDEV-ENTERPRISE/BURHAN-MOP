@@ -157,6 +157,98 @@ try {
     }
   }
 
+  // ─── Suite 3: Workflow profiles, readiness, drift check ───────────────────
+  if (suiteFilter === 'all' || suiteFilter === 'workflow') {
+    const wfTarget = mkdtempSync(join(tmpdir(), 'mop-wf-'));
+    try {
+      // Install fresh MOP
+      run('node', ['.MOP/scripts/burhan-mop.mjs', 'install', '--target', wfTarget, '--json']);
+
+      // Setup MOP in solo mode
+      run('node', [join(wfTarget, '.MOP/scripts/mop-core.mjs'), 'setup',
+        '--project-name', 'smoke-wf-test',
+        '--name', 'Smoke Tester',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345',
+        '--mode', 'solo',
+        '--conversation-language', 'English',
+        '--coding-language', 'English',
+        '--git-email', 'smoke@test.local',
+        '--git-name', 'Smoke Tester'
+      ], { cwd: wfTarget });
+
+      // Login
+      run('node', [join(wfTarget, '.MOP/scripts/mop-core.mjs'), 'login',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345'
+      ], { cwd: wfTarget });
+
+      // Activate agent
+      run('node', [join(wfTarget, '.MOP/scripts/mop-core.mjs'), 'agent', 'activate',
+        '--actor', 'smoketester',
+        '--role', 'core',
+        '--title', 'Core Agent',
+        '--name', 'Arif'
+      ], { cwd: wfTarget });
+
+      // T3.1: status with profile returns profile and relatedDecisions
+      const statusOut = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'status',
+        '--actor', 'smoketester',
+        '--profile', 'quick',
+        '--task', 'create a new backend api endpoint'
+      ], { cwd: wfTarget }));
+      if (statusOut.profile !== 'quick') throw new Error('T3.1: status did not return profile');
+      if (!Array.isArray(statusOut.relatedDecisions)) throw new Error('T3.1: status did not return relatedDecisions');
+
+      // T3.2: help with profile quick skips ux-spec
+      const helpOut = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'help',
+        '--actor', 'smoketester',
+        '--profile', 'quick',
+        '--task', 'design UI screen animation'
+      ], { cwd: wfTarget }));
+      if (helpOut.phase === 'ux-spec') {
+        throw new Error('T3.2: quick profile did not skip ux-spec phase');
+      }
+
+      // T3.3: readiness gate returns valid structure
+      const readinessOut = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'gate', 'readiness',
+        '--actor', 'smoketester',
+        '--task', 'implement a login form',
+        '--profile', 'quick'
+      ], { cwd: wfTarget }));
+      if (typeof readinessOut.status !== 'string') throw new Error('T3.3: readiness status not a string');
+      if (typeof readinessOut.stale !== 'boolean') throw new Error('T3.3: readiness stale not a boolean');
+
+      // T3.4: drift check returns valid structure
+      const driftOut = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'drift', 'check',
+        '--actor', 'smoketester'
+      ], { cwd: wfTarget }));
+      if (typeof driftOut.drifted !== 'boolean') throw new Error('T3.4: drift check drifted not a boolean');
+      if (!Array.isArray(driftOut.skippedPhases)) throw new Error('T3.4: drift check skippedPhases not an array');
+
+      // T3.5: freshness check
+      const artOut = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'artifact', 'create',
+        '--actor', 'smoketester',
+        '--type', 'prd',
+        '--title', 'Test PRD'
+      ], { cwd: wfTarget }));
+      if (!artOut.ok) throw new Error('T3.5: failed to create artifact');
+
+      const freshReadiness = parseJson(run('node', [join(wfTarget, '.MOP/scripts/mop-workflow.mjs'), 'gate', 'readiness',
+        '--actor', 'smoketester',
+        '--task', 'implement the test login feature',
+        '--artifact', artOut.path
+      ], { cwd: wfTarget }));
+      if (freshReadiness.stale !== false) {
+        throw new Error('T3.5: expected fresh artifact to not be stale');
+      }
+
+      console.log('[suite:workflow] OK');
+    } finally {
+      rmSync(wfTarget, { recursive: true, force: true });
+    }
+  }
+
   if (suiteFilter === 'all') {
     console.log('MOP smoke tests OK.');
   }

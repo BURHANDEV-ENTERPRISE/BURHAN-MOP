@@ -124,6 +124,46 @@
       "review",
       "release"
     ],
+    "profiles": {
+      "quick": {
+        "phaseOrder": [
+          "idea",
+          "brief",
+          "architecture",
+          "story",
+          "readiness",
+          "implementation",
+          "review",
+          "release"
+        ]
+      },
+      "product": {
+        "phaseOrder": [
+          "idea",
+          "brief",
+          "prd",
+          "ux-spec",
+          "story",
+          "implementation",
+          "release"
+        ]
+      },
+      "engineering": {
+        "phaseOrder": [
+          "idea",
+          "brief",
+          "prd",
+          "ux-spec",
+          "architecture",
+          "story",
+          "readiness",
+          "implementation",
+          "review",
+          "release"
+        ],
+        "mandatoryReadiness": true
+      }
+    },
     "phases": [
       {
         "id": "idea",
@@ -131,7 +171,8 @@
         "primaryRole": "planner",
         "partyRoles": [
           "architect",
-          "researcher"
+          "researcher",
+          "pm"
         ],
         "artifact": "product-brief",
         "goal": "Clarify the user's intent, outcome, audience, constraints, and unknowns."
@@ -143,7 +184,8 @@
         "partyRoles": [
           "ux",
           "architect",
-          "prompt"
+          "ai",
+          "pm"
         ],
         "artifact": "product-brief",
         "goal": "Turn the idea into a concise product direction and first scope."
@@ -155,7 +197,8 @@
         "partyRoles": [
           "ux",
           "architect",
-          "reviewer"
+          "pm",
+          "qa"
         ],
         "artifact": "prd",
         "goal": "Define users, requirements, user stories, acceptance criteria, and risks."
@@ -190,11 +233,11 @@
       {
         "id": "story",
         "title": "Implementation Story",
-        "primaryRole": "planner",
+        "primaryRole": "pm",
         "partyRoles": [
           "coder",
-          "tester",
-          "reviewer"
+          "qa",
+          "questmaster"
         ],
         "artifact": "story",
         "goal": "Break approved scope into implementable tasks with acceptance checks."
@@ -202,10 +245,10 @@
       {
         "id": "readiness",
         "title": "Readiness Gate",
-        "primaryRole": "reviewer",
+        "primaryRole": "integrity",
         "partyRoles": [
           "architect",
-          "tester",
+          "qa",
           "security"
         ],
         "artifact": "readiness-report",
@@ -219,7 +262,7 @@
           "frontend",
           "backend",
           "database",
-          "tester"
+          "qa"
         ],
         "artifact": "implementation-notes",
         "goal": "Build the approved story with small safe changes and autosycn."
@@ -229,10 +272,11 @@
         "title": "Review",
         "primaryRole": "reviewer",
         "partyRoles": [
-          "tester",
+          "qa",
           "security",
           "performance",
-          "ux"
+          "ux",
+          "analyst"
         ],
         "artifact": "review",
         "goal": "Find defects, regressions, missing tests, UX mismatch, and security/performance risks."
@@ -245,6 +289,7 @@
           "github",
           "deploy",
           "reviewer",
+          "recall",
           "memory"
         ],
         "artifact": "release-notes",
@@ -655,6 +700,54 @@
       "title": "SEO Strategist",
       "kind": "marketing",
       "purpose": "Technical SEO, metadata, schema, content structure, and search readiness."
+    },
+    {
+      "role": "pm",
+      "title": "Project Manager",
+      "kind": "thinking",
+      "purpose": "Sprint planning, roadmap, task breakdown, deadlines, and stakeholder alignment."
+    },
+    {
+      "role": "questmaster",
+      "title": "Questmaster",
+      "kind": "thinking",
+      "purpose": "Quest design, XP systems, phase gates, progress discipline, and blockers."
+    },
+    {
+      "role": "onboard",
+      "title": "Onboarding Steward",
+      "kind": "communication",
+      "purpose": "Setup, roster, invites, authentication, and access-control."
+    },
+    {
+      "role": "integrity",
+      "title": "Integrity Guardian",
+      "kind": "quality",
+      "purpose": "Preflight checks, schema validation, consistency checks, and risk analysis."
+    },
+    {
+      "role": "recall",
+      "title": "Recall Scout",
+      "kind": "memory",
+      "purpose": "History search, ledger queries, context restoration, and handoff lookup."
+    },
+    {
+      "role": "qa",
+      "title": "QA Engineer",
+      "kind": "quality",
+      "purpose": "Test plans, coverage gaps, regression checking, and automation script validation."
+    },
+    {
+      "role": "ai",
+      "title": "Prompt Alchemist",
+      "kind": "ai",
+      "purpose": "Prompt engineering, agent protocols, context discipline, and model performance tuning."
+    },
+    {
+      "role": "analyst",
+      "title": "Data Analyst",
+      "kind": "thinking",
+      "purpose": "Data analysis, performance metrics compilation, trends analysis, and reporting."
     }
   ],
   "ledger": [
