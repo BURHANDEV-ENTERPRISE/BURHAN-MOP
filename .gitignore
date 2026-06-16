@@ -20,3 +20,7 @@ coverage/
 Thumbs.db
 
 .MOP/STATE.json.tmp
+
+# Ruflo legacy quarantine — not published, not tracked
+runtime/
+.claude-flow/
