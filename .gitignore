@@ -24,3 +24,7 @@ Thumbs.db
 # Ruflo legacy quarantine — not published, not tracked
 runtime/
 .claude-flow/
+
+# MOP — runtime folder (excluded from npm publish, keep for development)
+.claude/agents/
+.claude/commands/
