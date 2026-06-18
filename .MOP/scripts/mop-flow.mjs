@@ -254,7 +254,7 @@ function buildManifest() {
   const skills = mergeSkills(portableSkills, runtimeSkills);
   const state = readJson(join(coreDir, 'STATE.json'), {});
   return {
-    schemaVersion: '0.1.0',
+    schemaVersion: '1.1.0',
     generatedAt: now(),
     brand: {
       name: 'MOP Flow',

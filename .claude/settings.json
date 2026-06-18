@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('pre-bash');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "pre-bash"],
             "timeout": 5000
           }
         ]
@@ -16,7 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('pre-edit');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "pre-edit"],
             "timeout": 5000
           }
         ]
@@ -28,7 +30,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('post-edit');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "post-edit"],
             "timeout": 10000
           }
         ]
@@ -38,7 +41,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('post-bash');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "post-bash"],
             "timeout": 5000
           }
         ]
@@ -49,7 +53,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('route');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "route"],
             "timeout": 10000
           }
         ]
@@ -60,12 +65,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('session-restore');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "session-restore"],
             "timeout": 15000
           },
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/auto-memory-hook.mjs'); if(require('fs').existsSync(h)){import(h).then(m=>m.default?.('import')).catch(()=>{})}\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/auto-memory-hook.mjs", "import"],
             "timeout": 8000
           }
         ]
@@ -76,7 +83,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('session-end');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "session-end"],
             "timeout": 10000
           }
         ]
@@ -87,7 +95,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/auto-memory-hook.mjs'); if(require('fs').existsSync(h)){import(h).then(m=>m.default?.('sync')).catch(()=>{})}\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/auto-memory-hook.mjs", "sync"],
             "timeout": 10000
           }
         ]
@@ -99,11 +108,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('compact-manual');\""
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "compact-manual"]
           },
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('session-end');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "session-end"],
             "timeout": 5000
           }
         ]
@@ -113,11 +124,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('compact-auto');\""
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "compact-auto"]
           },
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('session-end');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "session-end"],
             "timeout": 6000
           }
         ]
@@ -128,7 +141,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('status');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "status"],
             "timeout": 3000
           }
         ]
@@ -139,7 +153,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('post-task');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "post-task"],
             "timeout": 5000
           }
         ]
@@ -150,7 +165,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const h=require('path').join(process.env.CLAUDE_PROJECT_DIR||'.', '.claude/helpers/hook-handler.cjs'); require('fs').existsSync(h) && require(h)('notify');\"",
+            "command": "node",
+            "args": ["bin/mop-run.mjs", ".claude/helpers/hook-handler.cjs", "notify"],
             "timeout": 3000
           }
         ]

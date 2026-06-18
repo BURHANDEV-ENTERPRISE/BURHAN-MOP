@@ -327,6 +327,65 @@ function artifactCreate(args) {
   }, null, 2));
 }
 
+// Semak artifact freshness — return senarai yang STALE
+function checkArtifactStaleness(artifactDir = '.MOP/artifacts') {
+  const stale = [];
+  const absArtifactDir = join(rootDir, artifactDir);
+  if (!existsSync(absArtifactDir)) return stale;
+
+  const STALE_DAYS = 7;
+  const now = Date.now();
+
+  for (const type of ['prd', 'architecture', 'story']) {
+    const dir = join(absArtifactDir, type);
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir).filter(f => f.endsWith('.md'))) {
+      const fullPath = join(dir, file);
+      try {
+        const mtime = statSync(fullPath).mtimeMs;
+        const ageDays = (now - mtime) / (1000 * 60 * 60 * 24);
+        if (ageDays > STALE_DAYS) {
+          stale.push({ file: fullPath.replace(rootDir, '').replace(/^[\\/]/, ''), ageDays: Math.round(ageDays) });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return stale;
+}
+
+// Semak workflow drift — adakah implementation tanpa readiness?
+function checkWorkflowDrift(state) {
+  const ledger = state.ledger ?? [];
+  const now = Date.now();
+  const window48h = 48 * 60 * 60 * 1000;
+
+  const recentImpl = ledger.find(e =>
+    e.kind === 'implementation' && (now - new Date(e.at || e.timestamp).getTime()) < window48h
+  );
+  const recentReadiness = ledger.find(e =>
+    e.kind === 'readiness' && (now - new Date(e.at || e.timestamp).getTime()) < window48h
+  );
+
+  if (recentImpl && !recentReadiness) {
+    return { drift: true, reason: 'skipped-readiness-gate', since: recentImpl.at || recentImpl.timestamp };
+  }
+  return { drift: false };
+}
+
+// Start workflow dengan profile tertentu
+function workflowStart(profileName, state) {
+  const profiles = state.workflow?.profiles ?? {};
+  if (!profiles[profileName]) {
+    throw new Error(`Profile tidak dijumpai: ${profileName}. Pilih: ${Object.keys(profiles).join(', ')}`);
+  }
+  state.workflow.activeProfile = profileName;
+  state.workflow.phaseOrder = profiles[profileName].phaseOrder || profiles[profileName];
+  state.workflow.currentPhase = state.workflow.phaseOrder[0];
+  return state;
+}
+
 function readiness(args) {
   const state = readState();
   const actor = slug(requireArg(args, 'actor'));
@@ -384,7 +443,7 @@ function readiness(args) {
     status = 'blocked';
   }
 
-  console.log(JSON.stringify({
+  const gateResult = {
     status,
     canCode: status === 'ready',
     stale: isStale,
@@ -395,7 +454,30 @@ function readiness(args) {
     next: status === 'ready'
       ? 'Proceed to implementation with autosycn.'
       : 'Ask clarification or create/update the required artifact before coding.'
-  }, null, 2));
+  };
+
+  // Fasa 2 check staleness
+  const stale = checkArtifactStaleness();
+  if (stale.length > 0) {
+    const isImplementation = phase?.id === 'implementation';
+    gateResult.artifactStaleness = {
+      status: isImplementation ? 'blocked' : 'warning',
+      staleFiles: stale
+    };
+    if (isImplementation) {
+      gateResult.canCode = false;
+      gateResult.status = 'blocked';
+      gateResult.reason = `${stale.length} artifact STALE (>7 hari). Kemaskini sebelum implementation.`;
+    }
+  }
+
+  // Fasa 2 check workflow drift
+  const drift = checkWorkflowDrift(state);
+  if (drift.drift) {
+    gateResult.driftWarning = drift;
+  }
+
+  console.log(JSON.stringify(gateResult, null, 2));
 }
 
 function driftCheck(args) {

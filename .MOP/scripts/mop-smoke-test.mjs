@@ -371,9 +371,98 @@ try {
     }
   }
 
+  // ─── Suite 5: Workflow profile start + activeProfile ─────────────────────
+  if (suiteFilter === 'all' || suiteFilter === 'profile') {
+    const profTarget = mkdtempSync(join(tmpdir(), 'mop-prof-'));
+    try {
+      run('node', ['.MOP/scripts/burhan-mop.mjs', 'install', '--target', profTarget, '--json']);
+
+      run('node', [join(profTarget, '.MOP/scripts/mop-core.mjs'), 'setup',
+        '--project-name', 'smoke-prof-test',
+        '--name', 'Smoke Tester',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345',
+        '--mode', 'solo',
+        '--conversation-language', 'English',
+        '--coding-language', 'English',
+        '--git-email', 'smoke@test.local',
+        '--git-name', 'Smoke Tester'
+      ], { cwd: profTarget });
+
+      run('node', [join(profTarget, '.MOP/scripts/mop-core.mjs'), 'login',
+        '--codename', 'smoketester',
+        '--password', 'smoke12345'
+      ], { cwd: profTarget });
+
+      // T5.1: workflow status returns activeProfile
+      const stateAfter = JSON.parse(readFileSync(join(profTarget, '.MOP/STATE.json'), 'utf8'));
+      if (!stateAfter.workflow?.profiles) {
+        throw new Error('T5.1: STATE.json workflow.profiles not found');
+      }
+      if (!Object.keys(stateAfter.workflow.profiles).includes('quick')) {
+        throw new Error('T5.1: workflow.profiles.quick not found');
+      }
+      if (!Object.keys(stateAfter.workflow.profiles).includes('product')) {
+        throw new Error('T5.1: workflow.profiles.product not found');
+      }
+      if (!Object.keys(stateAfter.workflow.profiles).includes('engineering')) {
+        throw new Error('T5.1: workflow.profiles.engineering not found');
+      }
+
+      // T5.2: activeProfile exists in STATE.json
+      if (stateAfter.workflow?.activeProfile === undefined) {
+        throw new Error('T5.2: workflow.activeProfile field not in STATE.json');
+      }
+
+      // T5.3: workflow status with each profile returns different phaseOrder
+      const quickStatus = JSON.parse(
+        run('node', [join(profTarget, '.MOP/scripts/mop-workflow.mjs'), 'status', '--profile', 'quick'], { cwd: profTarget })
+      );
+      const engStatus = JSON.parse(
+        run('node', [join(profTarget, '.MOP/scripts/mop-workflow.mjs'), 'status', '--profile', 'engineering'], { cwd: profTarget })
+      );
+      // quick profile should not have all 10 phases
+      if ((stateAfter.workflow.profiles.quick.phaseOrder?.length ?? 0) >=
+          (stateAfter.workflow.profiles.engineering.phaseOrder?.length ?? 0)) {
+        throw new Error('T5.3: quick profile should have fewer phases than engineering profile');
+      }
+
+      console.log('[suite:profile] OK');
+    } finally {
+      rmSync(profTarget, { recursive: true, force: true });
+    }
+  }
+
+  // ─── Suite 6: piiScrub unit — 5 pattern types ──────────────────────────────
+  if (suiteFilter === 'all' || suiteFilter === 'pii') {
+    const { piiScrub } = await import('./mop-federation.mjs');
+
+    const piiFailed = [];
+    const piiTests = [
+      { label: 'email',   input: 'email: user@example.com',         mustNotContain: 'user@example.com' },
+      { label: 'phone-my', input: 'tel: +60123456789',              mustNotContain: '+60123456789' },
+      { label: 'api-key', input: 'key: sk-abcdefg12345678901234567890123456789012345',  mustNotContain: 'sk-abcdefg12345678901234' },
+      { label: 'ic-my',   input: 'ic: 901225-10-1234',              mustNotContain: '901225-10-1234' },
+      { label: 'card',    input: 'card: 4111 1111 1111 1111',        mustNotContain: '4111 1111 1111 1111' },
+    ];
+
+    for (const t of piiTests) {
+      const scrubbed = piiScrub(t.input);
+      if (scrubbed.includes(t.mustNotContain)) {
+        piiFailed.push(`T6: piiScrub failed to redact [${t.label}]`);
+      }
+    }
+
+    if (piiFailed.length > 0) {
+      throw new Error(piiFailed.join('\n'));
+    }
+    console.log('[suite:pii] OK');
+  }
+
   if (suiteFilter === 'all') {
     console.log('MOP smoke tests OK.');
   }
+
 } finally {
   const tempRoot = tmpdir().replaceAll('\\', '/').toLowerCase();
   const targetPath = target.replaceAll('\\', '/').toLowerCase();

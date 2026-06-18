@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "initialized": false,
   "projectName": ".MemoryOfPlanet.core",
   "projectNameDefault": ".MemoryOfPlanet.core",
@@ -112,6 +112,7 @@
     "name": "MOP Workflow",
     "style": "BMAD-inspired, MOP-native",
     "currentPhase": null,
+    "activeProfile": "product",
     "phaseOrder": [
       "idea",
       "brief",

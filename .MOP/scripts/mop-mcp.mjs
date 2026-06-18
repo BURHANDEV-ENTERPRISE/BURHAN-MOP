@@ -9,7 +9,7 @@ const rl = createInterface({
 });
 
 const serverName = 'mop-flow';
-const serverVersion = '1.0.0';
+const serverVersion = '1.1.0';
 
 const tools = [
   {

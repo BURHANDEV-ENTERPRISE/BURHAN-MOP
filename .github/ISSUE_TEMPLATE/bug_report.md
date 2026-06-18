@@ -21,7 +21,7 @@ Penerangan jelas mengenai apa yang sepatutnya berlaku.
 **Persekitaran:**
  - OS: [e.g. Windows 11, macOS, Ubuntu]
  - Versi Node.js: [e.g. 20.x, 22.x]
- - Versi MOP Flow: [e.g. 1.0.0-rc.1]
+ - Versi MOP Flow: [e.g. 1.1.0]
  - Model: [e.g. Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro]
 
 **Log Konteks**

@@ -268,7 +268,16 @@ function progressBar(current, total) {
   return '[' + '\u25CF'.repeat(filled) + '\u25CB'.repeat(empty) + ']';
 }
 
-// Generate full statusline
+// Dynamic health check — bukan hardcode
+function getAgentDbStatus() {
+  try {
+    require.resolve('@agentdb/core');
+    return `${c.brightGreen}●AgentDB${c.reset}`;
+  } catch {
+    return `${c.gray}○AgentDB(opt)${c.reset}`;
+  }
+}
+
 function generateStatusline() {
   const user = getUserInfo();
   const progress = getV3Progress();
@@ -318,7 +327,7 @@ function generateStatusline() {
     `${c.brightPurple}🔧 Architecture${c.reset}    ` +
     `${c.cyan}DDD${c.reset} ${dddColor}●${String(progress.dddProgress).padStart(3)}%${c.reset}  ${c.dim}│${c.reset}  ` +
     `${c.cyan}Security${c.reset} ${securityColor}●${security.status}${c.reset}  ${c.dim}│${c.reset}  ` +
-    `${c.cyan}Memory${c.reset} ${c.brightGreen}●AgentDB${c.reset}  ${c.dim}│${c.reset}  ` +
+    `${c.cyan}Memory${c.reset} ${getAgentDbStatus()}  ${c.dim}│${c.reset}  ` +
     `${c.cyan}Integration${c.reset} ${swarm.coordinationActive ? c.brightCyan : c.dim}●${c.reset}`
   );
 
