@@ -23,6 +23,10 @@ node .MOP/scripts/mop-flow.mjs status --json
 
 - First action still applies: read `.MOP/STATE.json` and follow
   `.MOP/PROTOCOL.md`. (Tindakan pertama masih terpakai: baca STATE.json dan ikuti PROTOCOL.md)
+- **Every new chat starts UNAUTHENTICATED.** Demand `Codename dan password.` and
+  run `login` this chat. `activeMember` is only a hint, never proof of auth.
+  Session expires after 60 min idle; re-login when commands report
+  "Session expired" / "Not authenticated".
 - After authentication, run `mop-core.mjs memory brief --actor <codename>` and
   `mop-core.mjs agent route --actor <codename> --task "<user task>"` before
   answering.

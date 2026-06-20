@@ -1,11 +1,31 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "initialized": false,
   "projectName": ".MemoryOfPlanet.core",
   "projectNameDefault": ".MemoryOfPlanet.core",
   "ownerCodename": null,
   "activeMember": null,
   "activeAgents": {},
+  "session": {
+    "actor": null,
+    "authenticatedAt": null,
+    "lastActiveAt": null,
+    "expiresAt": null
+  },
+  "sessionPolicy": {
+    "enabled": true,
+    "idleTimeoutMinutes": 60,
+    "requireLoginEveryNewChat": true,
+    "requireLoginAfterIdle": true,
+    "doNotTrustPersistedActiveMember": true,
+    "rules": [
+      "Every new chat starts UNAUTHENTICATED regardless of activeMember in state.",
+      "activeMember is only a hint of the last user, never proof of authentication.",
+      "A valid session requires a successful login in the current conversation.",
+      "After idleTimeoutMinutes of inactivity the session expires and login is required again.",
+      "Before any GitHub commit/push or identity-bound action, the authenticated session member must match the actor."
+    ]
+  },
   "agentPolicy": {
     "requiredAfterAuth": true,
     "requireForEveryConversation": true,

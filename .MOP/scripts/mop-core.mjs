@@ -26,18 +26,83 @@ function writeState(state) {
   renameSync(tmp, statePath);
 }
 
-function enforceSessionTimeout(state, actor) {
-  if (!state.initialized || !actor || !state.lastActiveAt) return;
-  const oneHour = 60 * 60 * 1000;
-  const elapsed = Date.now() - new Date(state.lastActiveAt).getTime();
-  if (elapsed > oneHour) {
-    state.activeMember = null;
-    state.lastActiveAt = null;
+function sessionPolicy(state) {
+  return state.sessionPolicy || {
+    enabled: true,
+    idleTimeoutMinutes: 60,
+    requireLoginEveryNewChat: true,
+    requireLoginAfterIdle: true
+  };
+}
+
+function idleTimeoutMs(state) {
+  const minutes = Number(sessionPolicy(state).idleTimeoutMinutes || 60);
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
+}
+
+function clearSession(state) {
+  state.activeMember = null;
+  state.lastActiveAt = null;
+  state.session = { actor: null, authenticatedAt: null, lastActiveAt: null, expiresAt: null };
+  state.activeAgents = {};
+}
+
+function startSession(state, actor) {
+  const at = now();
+  state.activeMember = actor;
+  state.lastActiveAt = at;
+  state.session = {
+    actor,
+    authenticatedAt: at,
+    lastActiveAt: at,
+    expiresAt: new Date(Date.now() + idleTimeoutMs(state)).toISOString()
+  };
+}
+
+function sessionStatus(state, actor) {
+  const session = state.session || {};
+  const lastActive = session.lastActiveAt || state.lastActiveAt;
+  if (!session.actor || !lastActive) return { authenticated: false, reason: 'no-session', member: session.actor || null };
+  if (actor && session.actor !== actor) return { authenticated: false, reason: 'actor-mismatch', member: session.actor };
+  const elapsed = Date.now() - new Date(lastActive).getTime();
+  if (elapsed > idleTimeoutMs(state)) return { authenticated: false, reason: 'expired', member: session.actor };
+  return { authenticated: true, reason: 'valid', member: session.actor, expiresAt: session.expiresAt || null };
+}
+
+// Enforce a valid authenticated session for `actor`. Clears stale sessions and
+// refuses to proceed when login is required (no session, wrong actor, or idle timeout).
+function enforceSession(state, actor) {
+  if (!state.initialized || !actor) return;
+  if (sessionPolicy(state).enabled === false) return;
+  const status = sessionStatus(state, actor);
+  if (!status.authenticated) {
+    if (status.reason === 'expired') {
+      clearSession(state);
+      writeState(state);
+      throw new Error('Session expired (inactive too long). Please login again with codename and password.');
+    }
+    if (status.reason === 'actor-mismatch') {
+      throw new Error(`Session belongs to ${status.member}, not ${actor}. The previous member must logout, then ${actor} must login.`);
+    }
+    clearSession(state);
     writeState(state);
-    throw new Error('Session expired (inactive for more than 1 hour). Please login again.');
+    throw new Error('Not authenticated this session. Run login --codename <code> --password <pass> before continuing.');
   }
-  state.lastActiveAt = now();
+  // Touch the session to extend the idle window.
+  const at = now();
+  state.lastActiveAt = at;
+  state.session = {
+    actor,
+    authenticatedAt: (state.session && state.session.authenticatedAt) || at,
+    lastActiveAt: at,
+    expiresAt: new Date(Date.now() + idleTimeoutMs(state)).toISOString()
+  };
   writeState(state);
+}
+
+// Backward-compatible alias: older call sites use enforceSessionTimeout.
+function enforceSessionTimeout(state, actor) {
+  return enforceSession(state, actor);
 }
 
 function parseArgs(argv) {
@@ -816,8 +881,8 @@ function setup(args) {
   state.projectName = projectName;
   state.projectNameDefault = folderDefault;
   state.ownerCodename = codename;
-  state.activeMember = codename;
   state.activeAgents ||= {};
+  startSession(state, codename);
   state.agentPolicy ||= {
     requiredAfterAuth: true,
     requireForEveryConversation: true,
@@ -863,9 +928,9 @@ function login(args) {
     process.exitCode = 1;
     return;
   }
-  state.activeMember = codename;
-  state.lastActiveAt = now();
-  appendLedger(state, codename, 'login', 'Member authenticated.');
+  // A fresh login starts a new session and supersedes any carried-over member.
+  startSession(state, codename);
+  appendLedger(state, codename, 'login', 'Member authenticated; new session started.');
   writeState(state);
   
   // F5.1: SessionStart hook -> auto-populate SESSION_BRIEF.md
@@ -881,6 +946,42 @@ function login(args) {
       answerContract: answerContractFor(state, codename)
     }, null, 2));
   }
+}
+
+function logout(args) {
+  const state = readState();
+  const actor = slug(String(args.codename || args.actor || state.activeMember || ''));
+  clearSession(state);
+  if (state.initialized) appendLedger(state, actor || 'unknown', 'logout', 'Session ended; login required for next action.');
+  writeState(state);
+  console.log('Logged out. The next action requires login with codename and password.');
+}
+
+// whoami / session verify: report whether the CURRENT persisted session is still
+// valid. The AI gate must still demand login on every new chat; this command only
+// confirms idle-timeout validity and is used before identity-bound actions.
+function whoami(args) {
+  const state = readState();
+  if (!state.initialized) {
+    console.log(JSON.stringify({ initialized: false, authenticated: false, message: 'MOP belum di-setup. Jalankan /mop-setup.' }, null, 2));
+    return;
+  }
+  const actor = args.actor ? slug(String(args.actor)) : undefined;
+  const status = sessionStatus(state, actor);
+  console.log(JSON.stringify({
+    initialized: true,
+    authenticated: status.authenticated,
+    reason: status.reason,
+    sessionMember: status.member,
+    activeMemberHint: state.activeMember || null,
+    expiresAt: state.session?.expiresAt || null,
+    idleTimeoutMinutes: sessionPolicy(state).idleTimeoutMinutes || 60,
+    notes: [
+      'activeMember is only a hint of the last user, never proof of authentication.',
+      'Every new chat must re-login regardless of this status.'
+    ],
+    next: status.authenticated ? 'session-valid-but-confirm-new-chat-login' : 'demand-codename-and-password'
+  }, null, 2));
 }
 
 function agentActivate(args) {
@@ -1435,6 +1536,9 @@ function main() {
 
   if (command === 'setup') return setup(parseArgs([subcommand, ...rest].filter(Boolean)));
   if (command === 'login') return login(parseArgs([subcommand, ...rest].filter(Boolean)));
+  if (command === 'logout') return logout(parseArgs([subcommand, ...rest].filter(Boolean)));
+  if (command === 'whoami') return whoami(parseArgs([subcommand, ...rest].filter(Boolean)));
+  if (command === 'session' && subcommand === 'verify') return whoami(args);
   if (command === 'validate') return validate();
   if (command === 'status') return status();
   if (command === 'member' && subcommand === 'git-identity') return memberGitIdentity(args);
@@ -1455,6 +1559,9 @@ function main() {
   node .MOP/scripts/mop-core.mjs validate
   node .MOP/scripts/mop-core.mjs setup --project-name NAME --name DISPLAY --codename CODE --password PASS --mode solo|team --conversation-language LANG --coding-language LANG [--git-email github-noreply|EMAIL] [--git-name NAME] [--github-username USER] [--github-url URL]
   node .MOP/scripts/mop-core.mjs login --codename CODE --password PASS
+  node .MOP/scripts/mop-core.mjs logout [--codename CODE]
+  node .MOP/scripts/mop-core.mjs whoami [--actor CODE]
+  node .MOP/scripts/mop-core.mjs session verify --actor CODE
   node .MOP/scripts/mop-core.mjs member git-identity --actor CODE --name NAME [--email github-noreply|EMAIL] [--github-username USER]
   node .MOP/scripts/mop-core.mjs agent activate --actor CODE --role ROLE --title TITLE --name NAME
   node .MOP/scripts/mop-core.mjs agent use --actor CODE --name NAME

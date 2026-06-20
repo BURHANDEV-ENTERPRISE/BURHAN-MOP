@@ -10,9 +10,12 @@ Before doing anything in this workspace, read `.MOP/STATE.json` and
 follow `.MOP/PROTOCOL.md`.
 
 - `initialized: false` -> output `MOP belum di-setup. Jalankan /mop-setup.` Run the setup wizard only.
-- `initialized: true` with no `activeMember` -> output `Codename dan password.` Do not continue until verified.
-- Verify credentials through `node .MOP/scripts/mop-core.mjs login --codename <codename> --password "<password>"`.
-- Wrong credentials -> output `Credentials tidak sah.`
+- `initialized: true` -> **every new chat starts UNAUTHENTICATED.** Output `Codename dan password.` Do not continue until verified **in this chat**.
+- **`activeMember` is only a hint of the last user, NOT proof of authentication.** Never skip the gate because `activeMember` is set. Do not act as a member who did not log in this chat.
+- Verify credentials through `node .MOP/scripts/mop-core.mjs login --codename <codename> --password "<password>"`. A successful login starts a fresh session.
+- Wrong credentials -> output `Credentials tidak sah.` No hints, no exceptions for "my machine" or "I'm the owner".
+- The session expires after 60 min idle (`sessionPolicy.idleTimeoutMinutes`). If any `mop-core`/`autosycn` command reports "Session expired" or "Not authenticated", demand `Codename dan password.` again.
+- Before any GitHub commit/push, verify with `node .MOP/scripts/mop-core.mjs whoami --actor <codename>` that `authenticated: true` and `sessionMember` matches the acting member. If a different person takes over, the previous member must `logout` and the new person must `login`.
 - After authentication, run the Agent Router before answering or acting:
   `mop-core.mjs agent route --actor <codename> --task "<user task>"`.
   It selects one primary role and may recommend any number of support roles

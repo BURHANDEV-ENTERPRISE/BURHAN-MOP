@@ -101,6 +101,26 @@ function requireActiveAgent(state, actor, role = 'core', title = 'Core Agent') {
   ].join(' '));
 }
 
+// Refuse identity-bound git work unless `actor` holds a valid, non-expired
+// session. This stops a new person in a new chat from pushing under a previous
+// member's carried-over identity. Mirrors mop-core session rules (read-only).
+function requireValidSession(state, actor) {
+  if (state.sessionPolicy?.enabled === false) return;
+  const session = state.session || {};
+  const lastActive = session.lastActiveAt || state.lastActiveAt;
+  const minutes = Number(state.sessionPolicy?.idleTimeoutMinutes || 60);
+  const idleMs = (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
+  if (!session.actor || !lastActive) {
+    throw new Error(`No authenticated session for autosycn. ${actor} must login first: node .MOP/scripts/mop-core.mjs login --codename ${actor} --password <pass>`);
+  }
+  if (session.actor !== actor) {
+    throw new Error(`Session belongs to ${session.actor}, not ${actor}. Refusing to push under another member's identity. The active member must logout, then ${actor} must login.`);
+  }
+  if (Date.now() - new Date(lastActive).getTime() > idleMs) {
+    throw new Error(`Session expired (idle > ${minutes} min). ${actor} must login again before autosycn.`);
+  }
+}
+
 function agentLedgerFields(agent) {
   return agent ? {
     agent: agent.name,
@@ -524,6 +544,7 @@ function preflight(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
+  requireValidSession(state, actor);
   const identity = identityFor(state, actor);
   const env = identityEnv(identity);
   const ghStatus = verifyGhUser(identity, state);
@@ -566,6 +587,7 @@ function preflight(args) {
 function saveMemory(actor, summary, kind = 'conversation') {
   const state = readState();
   const agent = requireActiveAgent(state, actor);
+  requireValidSession(state, actor);
   appendLedger(state, actor, 'memory', summary, agent);
   appendMonthlyMemory(state, actor, kind, summary, agent);
   writeState(state);
@@ -578,6 +600,7 @@ function push(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
+  requireValidSession(state, actor);
   const reason = String(args.reason || 'MOP autosycn');
   const identity = identityFor(state, actor);
   const env = identityEnv(identity);
@@ -611,6 +634,7 @@ function init(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
+  requireValidSession(state, actor);
   if (actor !== state.ownerCodename) throw new Error('Only the owner can initialize autosycn.');
   const identity = identityFor(state, actor);
   const env = identityEnv(identity);
@@ -646,7 +670,8 @@ function mergeMain(args) {
   if (!state.initialized) throw new Error('MOP is not initialized.');
   const actor = requireArg(args, 'actor');
   const agent = requireActiveAgent(state, actor);
-  
+  requireValidSession(state, actor);
+
   // Enforce BURHAN-MOP handling all merges to main in team mode
   // Notice: The requireOwnerForMerge restriction has been explicitly removed 
   // so that all team members' code is safely merged by BURHAN-MOP.
