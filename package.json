@@ -1,6 +1,6 @@
 {
   "name": "mop-flow",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "MOP Flow — portable agent memory core, workflow engine, and provider bridge for Claude, Codex, Gemini, and Antigravity.",
   "type": "module",
   "author": "BURHANDEV ENTERPRISE",

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/mop-flow">
-    <img src="https://img.shields.io/badge/V1.1.0-cb3837?style=for-the-badge&label=NPM" alt="npm version">
+    <img src="https://img.shields.io/badge/V1.1.1-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -139,7 +139,7 @@ and merges only when the workflow is safe.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | latest command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.1.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v1.1.0) |
+| GitHub release | [`v1.1.1`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v1.1.1) |
 | Node | `>=20` |
 
 ## Links
