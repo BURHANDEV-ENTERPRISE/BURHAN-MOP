@@ -390,7 +390,13 @@ function main() {
     return;
   }
   if (command === 'link') {
-    return import('./mop-link.mjs').then((m) => m.runLink(args));
+    // `link <url>` — the URL is the first positional; parse the full tail so it survives.
+    const linkArgs = parseArgs(afterCommand);
+    return import('./mop-link.mjs').then((m) => m.runLink(linkArgs));
+  }
+  if (command === 'relay' || command === 'serve') {
+    const relayArgs = parseArgs(afterCommand);
+    return import('./mop-relay.mjs').then((m) => m.runRelay(relayArgs));
   }
 
   console.log(`Usage:
@@ -403,8 +409,8 @@ function main() {
   node .MOP/scripts/mop-flow.mjs bridge status [--json]
   node .MOP/scripts/mop-flow.mjs bridge refresh [--json]
   node .MOP/scripts/mop-flow.mjs mcp start
-  node .MOP/scripts/mop-flow.mjs link --key <pairingKey> [--gateway URL] [--name N] [--codename C] [--json]
-  node .MOP/scripts/mop-flow.mjs link --reconnect [--gateway URL] [--json]`);
+  node .MOP/scripts/mop-flow.mjs link <https://agent/v1/api/link/key> [--name N] [--no-push] [--json]
+  node .MOP/scripts/mop-flow.mjs relay [--once]`);
 }
 
 try {

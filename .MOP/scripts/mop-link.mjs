@@ -1,220 +1,157 @@
 #!/usr/bin/env node
 /**
- * mop-flow → gateway link handshake (v1).
+ * mop-flow → mop-agent DIRECT link handshake.
  *
- * Posts the project manifest + roster + one-time pairing key to the gateway's
- * consolidated endpoint:
+ * The user pastes the command shown by the Brain's "Add Project":
  *
- *   POST <gateway>/v1/api/link/flow
- *     { pairingKey, manifest:{ name, linkedBy }, roster:[{ codename, passwordHash? }] }
- *   → { projectLinkId, memberToken, channel, realtimeToken, expiresIn }
+ *   npx mop-flow link https://<agent-domain>/v1/api/link/<key>
+ *   npx mop-flow link http://<ip>:<port>/v1/api/link/<key>
  *
- * The result is written to .MOP/link.json (gitignored — holds the memberToken
- * secret + short-lived Realtime JWT). On reconnect we re-use the stored
- * projectLinkId + memberToken to refresh just the JWT.
+ * We POST the project manifest to that URL, receive the bearer link token + the
+ * WebSocket URL, and store them in .MOP/link.json (gitignored, chmod 600). Then
+ * we push one snapshot so the project shows up in the Brain immediately. Keep it
+ * live afterwards with `npx mop-flow relay`. NO gateway, NO Supabase.
  *
- * This is the HANDSHAKE only — the live snapshot/tool transport over Supabase
- * Realtime is wired separately.
- *
- *   node .MOP/scripts/mop-link.mjs --key ABCD-EFGH [--gateway URL] [--name N] [--codename C]
- *   node .MOP/scripts/mop-link.mjs --reconnect [--gateway URL]
+ *   node .MOP/scripts/mop-flow.mjs link <url> [--name N] [--no-push] [--json]
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, chmodSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { platform } from 'node:os';
+import { resolveCoreDir, pushSnapshotOnce } from './mop-relay.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const scriptCoreDir = resolve(here, '..'); // .MOP next to this script (package/scaffold copy)
+const LINK_SCHEMA = '1.0';
+const DEFAULT_CAPABILITIES = {
+  readMemory: true,
+  writeMemory: true,
+  readArtifacts: true,
+  writeArtifacts: true,
+  runWorkflow: true,
+  runShell: false,
+  editCode: false,
+};
 
-/**
- * Resolve the project's `.MOP/` directory.
- *
- * `npx mop-flow link` may run the script from the npm cache / node_modules, so a
- * script-relative `.MOP` would point at the package, not the user's project.
- * Prefer the `.MOP/` of the project the user is standing in: walk up from CWD
- * looking for a real STATE.json, and only fall back to the script-relative copy.
- */
-function resolveCoreDir() {
-  let dir = process.cwd();
-  for (let i = 0; i < 12; i++) {
-    if (existsSync(join(dir, '.MOP', 'STATE.json'))) return join(dir, '.MOP');
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return scriptCoreDir;
-}
-
-const coreDir = resolveCoreDir(); // .MOP
-const rootDir = resolve(coreDir, '..'); // project root
+const coreDir = resolveCoreDir();
 const statePath = join(coreDir, 'STATE.json');
 const linkPath = join(coreDir, 'link.json');
 
-const DEFAULT_GATEWAY = 'https://mop-gateway.burhan.my';
-const LINK_SCHEMA = '1.0';
-
 function readJson(path, fallback = {}) {
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-function gatewayBase(args) {
-  return String(args.gateway || process.env.GATEWAY_URL || DEFAULT_GATEWAY).replace(/\/+$/, '');
-}
-
-/** Build the roster ([{ codename, passwordHash? }]) from STATE.members, incl. the linker. */
-function buildRoster(state, linkedBy) {
-  const seen = new Set();
-  const roster = [];
-  const members = state.members && typeof state.members === 'object' ? state.members : {};
-  for (const [codename, info] of Object.entries(members)) {
-    const cn = String((info && info.codename) || codename).trim();
-    if (!cn || seen.has(cn)) continue;
-    seen.add(cn);
-    const entry = { codename: cn };
-    const hash = info && (info.passwordHash || info.password_hash);
-    if (hash) entry.passwordHash = hash;
-    roster.push(entry);
-  }
-  if (linkedBy && !seen.has(linkedBy)) roster.push({ codename: linkedBy });
-  return roster;
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return fallback; }
 }
 
 function writeLinkFile(link) {
   mkdirSync(dirname(linkPath), { recursive: true });
   const tmp = `${linkPath}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(link, null, 2)}\n`, 'utf8');
-  renameSync(tmp, linkPath); // atomic
-  try {
-    chmodSync(linkPath, 0o600); // best-effort POSIX perms; no-op on Windows
-  } catch {
-    /* gitignored regardless */
-  }
+  renameSync(tmp, linkPath);
+  try { chmodSync(linkPath, 0o600); } catch { /* gitignored regardless */ }
 }
 
-async function postLink(base, body) {
-  let res;
-  try {
-    res = await fetch(`${base}/v1/api/link/flow`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    throw new Error(`gateway_unreachable: ${base} (${err.message})`);
+/** Parse `https://host/v1/api/link/<key>` → { base, key }. */
+function parseLinkUrl(input) {
+  let u;
+  try { u = new URL(input); } catch { throw new Error(`bad_url: ${input}`); }
+  const parts = u.pathname.split('/').filter(Boolean);
+  const key = parts[parts.length - 1];
+  if (!key || !u.pathname.includes('/link/')) {
+    throw new Error('bad_url: expected https://<agent>/v1/api/link/<key>');
   }
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`link_flow_failed:${res.status}:${text}`);
-  }
-  return res.json();
+  return { base: `${u.protocol}//${u.host}`, key, url: u.toString() };
+}
+
+/** Stable project id: reuse the one in link.json, else mint prj_xxxx. */
+function resolveProjectId() {
+  const prev = readJson(linkPath, null);
+  if (prev && typeof prev.projectId === 'string' && prev.projectId) return prev.projectId;
+  return `prj_${randomBytes(4).toString('hex')}`;
 }
 
 export async function runLink(args = {}) {
   const asJson = args.json === true || args.format === 'json';
-  const base = gatewayBase(args);
+  const input = String(args.url || args._?.[0] || '').trim();
 
   try {
-    // ── Reconnect: refresh the channel JWT from the stored link ────────────────
-    if (args.reconnect) {
-      if (!existsSync(linkPath)) throw new Error('not_linked: run `mop-flow link --key <pairingKey>` first');
-      const prev = readJson(linkPath);
-      if (!prev.projectLinkId || !prev.memberToken) {
-        throw new Error('link_file_incomplete: missing projectLinkId or memberToken');
-      }
-      const out = await postLink(base, {
-        projectLinkId: prev.projectLinkId,
-        memberToken: prev.memberToken,
-      });
-      const link = {
-        ...prev,
-        gatewayUrl: base,
-        channel: out.channel,
-        realtimeUrl: out.realtimeUrl ?? prev.realtimeUrl ?? null,
-        realtimeToken: out.realtimeToken,
-        expiresIn: out.expiresIn,
-        reconnectedAt: new Date().toISOString(),
-      };
-      writeLinkFile(link);
-      return report(link, asJson, 'reconnected');
-    }
-
-    // ── First link: consume a one-time pairing key ─────────────────────────────
-    const key = typeof args.key === 'string' ? args.key.trim() : '';
-    if (!key) throw new Error('usage: mop-flow link --key <pairingKey> [--gateway URL] [--name N] [--codename C]');
+    if (!input) throw new Error('usage: npx mop-flow link <https://agent/v1/api/link/key> [--name N] [--no-push]');
+    const { base, key, url } = parseLinkUrl(input);
 
     const state = readJson(statePath);
-    const name = String(args.name || state.projectName || 'project');
-    const linkedBy = String(args.codename || state.activeMember || state.ownerCodename || '').trim() || undefined;
-    const roster = buildRoster(state, linkedBy);
+    const projectId = resolveProjectId();
+    const manifest = {
+      projectId,
+      name: String(args.name || state.projectName || 'project'),
+      mopFlowVersion: String(state.mopFlow?.version || '1.3.x'),
+      platform: platform(),
+      capabilities: DEFAULT_CAPABILITIES,
+    };
 
-    const out = await postLink(base, {
-      pairingKey: key,
-      manifest: { name, linkedBy, platform: platform(), mopFlow: state.mopFlow?.version ?? null },
-      roster,
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ manifest }),
+      });
+    } catch (err) {
+      throw new Error(`agent_unreachable: ${base} (${err.message})`);
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`link_failed:${res.status}:${text}`);
+    }
+    const out = await res.json(); // { projectId, linkToken, wsUrl }
 
     const link = {
       schemaVersion: LINK_SCHEMA,
-      gatewayUrl: base,
-      projectLinkId: out.projectLinkId,
-      channel: out.channel,
-      realtimeUrl: out.realtimeUrl ?? null,
-      memberToken: out.memberToken ?? null,
-      realtimeToken: out.realtimeToken,
-      expiresIn: out.expiresIn,
-      linkedBy: linkedBy ?? null,
+      agentUrl: base,
+      wsUrl: out.wsUrl,
+      projectId: out.projectId || projectId,
+      linkToken: out.linkToken,
+      capabilities: manifest.capabilities,
       linkedAt: new Date().toISOString(),
       lastSyncAt: null,
+      autoSync: true,
     };
     writeLinkFile(link);
-    return report(link, asJson, 'linked');
-  } catch (err) {
-    if (asJson) {
-      console.log(JSON.stringify({ ok: false, error: err.message }, null, 2));
-    } else {
-      console.error(`✗ ${err.message}`);
+
+    // Push one snapshot so the project appears in the Brain right away.
+    let pushed = false;
+    if (args.push !== false && args['no-push'] !== true) {
+      try { await pushSnapshotOnce(coreDir, link); pushed = true; } catch { /* best-effort */ }
     }
+
+    return report(link, asJson, 'linked', pushed);
+  } catch (err) {
+    if (asJson) console.log(JSON.stringify({ ok: false, error: err.message }, null, 2));
+    else console.error(`✗ ${err.message}`);
     process.exitCode = 1;
   }
 }
 
-function report(link, asJson, verb) {
+function report(link, asJson, verb, pushed) {
   if (asJson) {
-    // Never echo the secret memberToken / full JWT in JSON output.
-    const { memberToken, realtimeToken, ...safe } = link;
-    console.log(JSON.stringify({ ok: true, verb, link: { ...safe, hasMemberToken: !!memberToken } }, null, 2));
+    const { linkToken, ...safe } = link;
+    console.log(JSON.stringify({ ok: true, verb, pushed, link: { ...safe, hasToken: !!linkToken } }, null, 2));
     return;
   }
-  console.log(`🔗 ${verb}: ${link.projectLinkId} @ ${link.gatewayUrl}`);
-  console.log(`   channel: ${link.channel}`);
-  if (link.linkedBy) console.log(`   linkedBy: ${link.linkedBy}`);
-  console.log(`   realtime JWT: ${String(link.realtimeToken).slice(0, 24)}… (expires in ${link.expiresIn}s)`);
+  console.log(`🔗 ${verb}: ${link.projectId} → ${link.agentUrl}`);
+  console.log(`   ws: ${link.wsUrl}`);
+  console.log(`   snapshot: ${pushed ? 'pushed ✓ (project now visible in the Brain)' : 'not pushed — run `npx mop-flow relay --once`'}`);
   console.log(`   saved: .MOP/link.json (gitignored)`);
+  console.log(`   keep it live:  npx mop-flow relay`);
 }
 
-// Allow direct invocation: node .MOP/scripts/mop-link.mjs --key ...
+// Direct invocation
 if (resolve(process.argv[1] || '') === resolve(fileURLToPath(import.meta.url))) {
   const args = { _: [] };
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
-    if (!item.startsWith('--')) {
-      args._.push(item);
-      continue;
-    }
-    const [key, inline] = item.slice(2).split('=', 2);
-    if (inline !== undefined) {
-      args[key] = inline;
-    } else if (!argv[i + 1] || argv[i + 1].startsWith('--')) {
-      args[key] = true;
-    } else {
-      args[key] = argv[(i += 1)];
-    }
+    if (!item.startsWith('--')) { args._.push(item); continue; }
+    const [k, inline] = item.slice(2).split('=', 2);
+    if (inline !== undefined) args[k] = inline;
+    else if (!argv[i + 1] || argv[i + 1].startsWith('--')) args[k] = true;
+    else args[k] = argv[(i += 1)];
   }
   runLink(args);
 }
