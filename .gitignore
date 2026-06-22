@@ -21,6 +21,10 @@ Thumbs.db
 
 .MOP/STATE.json.tmp
 
+# Gateway link credential (holds memberToken + Realtime JWT) — never commit
+.MOP/link.json
+.MOP/link.json.tmp
+
 # Ruflo legacy quarantine — not published, not tracked
 runtime/
 .claude-flow/

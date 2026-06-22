@@ -389,6 +389,9 @@ function main() {
     import('./mop-mcp.mjs');
     return;
   }
+  if (command === 'link') {
+    return import('./mop-link.mjs').then((m) => m.runLink(args));
+  }
 
   console.log(`Usage:
   node .MOP/scripts/mop-flow.mjs [tui]
@@ -399,7 +402,9 @@ function main() {
   node .MOP/scripts/mop-flow.mjs manifest refresh [--json]
   node .MOP/scripts/mop-flow.mjs bridge status [--json]
   node .MOP/scripts/mop-flow.mjs bridge refresh [--json]
-  node .MOP/scripts/mop-flow.mjs mcp start`);
+  node .MOP/scripts/mop-flow.mjs mcp start
+  node .MOP/scripts/mop-flow.mjs link --key <pairingKey> [--gateway URL] [--name N] [--codename C] [--json]
+  node .MOP/scripts/mop-flow.mjs link --reconnect [--gateway URL] [--json]`);
 }
 
 try {
