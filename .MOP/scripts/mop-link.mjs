@@ -25,7 +25,28 @@ import { fileURLToPath } from 'node:url';
 import { platform } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const coreDir = resolve(here, '..'); // .MOP
+const scriptCoreDir = resolve(here, '..'); // .MOP next to this script (package/scaffold copy)
+
+/**
+ * Resolve the project's `.MOP/` directory.
+ *
+ * `npx mop-flow link` may run the script from the npm cache / node_modules, so a
+ * script-relative `.MOP` would point at the package, not the user's project.
+ * Prefer the `.MOP/` of the project the user is standing in: walk up from CWD
+ * looking for a real STATE.json, and only fall back to the script-relative copy.
+ */
+function resolveCoreDir() {
+  let dir = process.cwd();
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(dir, '.MOP', 'STATE.json'))) return join(dir, '.MOP');
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return scriptCoreDir;
+}
+
+const coreDir = resolveCoreDir(); // .MOP
 const rootDir = resolve(coreDir, '..'); // project root
 const statePath = join(coreDir, 'STATE.json');
 const linkPath = join(coreDir, 'link.json');
