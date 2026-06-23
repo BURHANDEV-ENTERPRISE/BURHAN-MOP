@@ -10,7 +10,7 @@
  * We POST the project manifest to that URL, receive the bearer link token + the
  * WebSocket URL, and store them in .MOP/link.json (gitignored, chmod 600). Then
  * we push one snapshot so the project shows up in the Brain immediately. Keep it
- * live afterwards with `npx mop-flow relay`. NO gateway, NO Supabase.
+ * live afterwards with `npx mop-flow service install --start`. NO gateway, NO Supabase.
  *
  *   node .MOP/scripts/mop-flow.mjs link <url> [--name N] [--no-push] [--json]
  */
@@ -46,7 +46,7 @@ function resolveMopFlowVersion(state) {
   try {
     return readFileSync(join(coreDir, 'VERSION.txt'), 'utf8').trim();
   } catch {
-    return '1.4.2';
+    return '1.4.3';
   }
 }
 

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/mop-flow">
-    <img src="https://img.shields.io/badge/V1.4.2-cb3837?style=for-the-badge&label=NPM" alt="npm version">
+    <img src="https://img.shields.io/badge/V1.4.3-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/mop-flow">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -141,8 +141,10 @@ service. Guna `npx mop-flow service list` untuk lihat project berdaftar.
 Registry service tidak simpan token; setiap project kekalkan token sendiri dalam
 `.MOP/link.json` yang gitignored.
 
-`npx mop-flow` juga ada menu Control Center yang ringkas untuk Link, Relay, dan
-Service.
+`npx mop-flow` juga ada menu Control Center ringkas: Install, Update, Doctor,
+Status, Link, Delete, Skills, dan Exit. Action Link ialah all-in-one: paste URL
+Brain, link project, kemudian install/start background relay service secara
+automatik.
 
 ## Workflow Team
 
@@ -162,7 +164,7 @@ dan merge hanya bila workflow selamat.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.4.2`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.2) |
+| GitHub release | [`v1.4.3`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.3) |
 | Node | `>=20` |
 
 ## Links

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/mop-flow">
-    <img src="https://img.shields.io/badge/V1.4.2-cb3837?style=for-the-badge&label=NPM" alt="npm version">
+    <img src="https://img.shields.io/badge/V1.4.3-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/mop-flow">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -141,8 +141,10 @@ Use `npx mop-flow service list` to see registered projects. The service registry
 does not store link tokens; each project keeps its own gitignored
 `.MOP/link.json`.
 
-`npx mop-flow` also includes a compact Control Center menu for Link, Relay, and
-Service actions.
+`npx mop-flow` also includes a compact Control Center menu: Install, Update,
+Doctor, Status, Link, Delete, Skills, and Exit. The Link menu action is
+all-in-one: paste the Brain URL, link the project, then install/start the
+background relay service automatically.
 
 ## Team Workflow
 
@@ -162,7 +164,7 @@ and merges only when the workflow is safe.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | latest command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.4.2`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.2) |
+| GitHub release | [`v1.4.3`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.3) |
 | Node | `>=20` |
 
 ## Links

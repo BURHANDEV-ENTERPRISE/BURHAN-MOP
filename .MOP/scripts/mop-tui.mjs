@@ -11,11 +11,17 @@ const packageRoot = resolve(coreDir, '..');
 const cwd = process.cwd();
 
 function readPackageVersion() {
+  if (process.env.MOP_FLOW_PACKAGE_VERSION) return process.env.MOP_FLOW_PACKAGE_VERSION;
   try {
     const pkg = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
-    return pkg.version;
+    if (pkg.name === 'mop-flow' && pkg.version) return pkg.version;
   } catch {
-    return 'Unknown';
+    // Fall through to installed-core or release fallback below.
+  }
+  try {
+    return readFileSync(join(coreDir, 'VERSION.txt'), 'utf8').trim();
+  } catch {
+    return '1.4.3';
   }
 }
 
@@ -56,95 +62,74 @@ function paint(name, value) {
 const actions = [
   {
     id: 'install',
-    group: 'Project Core',
-    label: 'Install MOP Core',
+    group: 'Core',
+    label: 'Install',
     description: 'Copy MOP files into this project.',
     bin: 'installer',
     args: ['install'],
-    show: () => !installedVersion
+    disabled: () => Boolean(installedVersion),
+    disabledReason: 'already installed'
   },
   {
     id: 'update',
-    group: 'Project Core',
-    label: 'Update MOP Core',
+    group: 'Core',
+    label: 'Update',
     description: 'Refresh scripts and configs while preserving project state.',
     bin: 'installer',
     args: ['install', '--force'],
-    show: () => Boolean(installedVersion && installedVersion !== packageVersion)
+    disabled: () => !installedVersion || installedVersion === packageVersion,
+    disabledReason: () => !installedVersion ? 'install first' : 'already latest'
   },
   {
     id: 'doctor',
-    group: 'Project Core',
-    label: 'Doctor Check',
+    group: 'Core',
+    label: 'Doctor',
     description: 'Run workspace health checks.',
     bin: 'installer',
     args: ['doctor']
   },
   {
     id: 'status',
-    group: 'Project Core',
-    label: 'Flow Status',
+    group: 'Core',
+    label: 'Status',
     description: 'Show provider bridge and skill status.',
     bin: 'flow',
     args: ['status']
   },
   {
     id: 'link',
-    group: 'Brain Link',
-    label: 'Link To Brain',
-    description: 'Paste an Add Project URL and register this project.',
+    group: 'Brain',
+    label: 'Link',
+    description: 'Paste Brain URL, link this project, then install/start background relay.',
     bin: 'flow',
     args: async () => {
       const url = await askLine('Paste Brain link URL');
-      return url ? ['link', url] : null;
+      return url ? [['link', url], ['service', 'install', '--start']] : null;
     },
-    show: () => Boolean(installedVersion)
+    disabled: () => !installedVersion,
+    disabledReason: 'install first'
   },
   {
-    id: 'relay-once',
-    group: 'Brain Link',
-    label: 'Push Snapshot Once',
-    description: 'Send one project snapshot without staying connected.',
-    bin: 'flow',
-    args: ['relay', '--once'],
-    show: () => Boolean(installedVersion)
-  },
-  {
-    id: 'service-install',
-    group: 'Brain Link',
-    label: 'Install Background Relay',
-    description: 'Autostart all registered project relays on this PC.',
-    bin: 'flow',
-    args: ['service', 'install', '--start']
-  },
-  {
-    id: 'service-list',
-    group: 'Brain Link',
-    label: 'Relay Service List',
-    description: 'Show registered projects and autostart status.',
-    bin: 'flow',
-    args: ['service', 'list']
+    id: 'delete',
+    group: 'Tools',
+    label: 'Delete',
+    description: 'Remove installed MOP files from this project.',
+    bin: 'installer',
+    args: ['delete'],
+    disabled: () => !installedVersion,
+    disabledReason: 'not installed'
   },
   {
     id: 'skills',
     group: 'Tools',
-    label: 'Skills List',
+    label: 'Skills',
     description: 'List portable and runtime-bridged skills.',
     bin: 'flow',
     args: ['skills', 'list']
   },
   {
-    id: 'delete',
-    group: 'Danger Zone',
-    label: 'Delete MOP Core',
-    description: 'Remove installed MOP files from this project.',
-    bin: 'installer',
-    args: ['delete'],
-    show: () => Boolean(installedVersion)
-  },
-  {
     id: 'exit',
-    group: 'Danger Zone',
+    group: 'Tools',
     label: 'Exit',
     description: 'Close this menu.',
     bin: null,
@@ -160,8 +145,39 @@ function isDisabled(action) {
   return typeof action.disabled === 'function' && action.disabled();
 }
 
+function disabledReason(action) {
+  if (!isDisabled(action)) return null;
+  if (typeof action.disabledReason === 'function') return action.disabledReason();
+  return action.disabledReason || 'disabled';
+}
+
 function visibleActions() {
-  return actions.filter((action) => typeof action.show !== 'function' || action.show());
+  return actions;
+}
+
+function firstEnabledIndex() {
+  const visible = visibleActions();
+  const found = visible.findIndex((action) => !isDisabled(action));
+  return found === -1 ? 0 : found;
+}
+
+function ensureSelectableIndex() {
+  const visible = visibleActions();
+  if (selectedIndex >= visible.length) selectedIndex = Math.max(0, visible.length - 1);
+  if (isDisabled(visible[selectedIndex])) selectedIndex = firstEnabledIndex();
+}
+
+function moveSelection(direction) {
+  const visible = visibleActions();
+  if (!visible.length) return;
+  let next = selectedIndex;
+  for (let i = 0; i < visible.length; i += 1) {
+    next = (next + direction + visible.length) % visible.length;
+    if (!isDisabled(visible[next])) {
+      selectedIndex = next;
+      return;
+    }
+  }
 }
 
 function refreshState() {
@@ -213,7 +229,7 @@ function renderMenu() {
   clearScreen();
   refreshState();
   const visible = visibleActions();
-  if (selectedIndex >= visible.length) selectedIndex = Math.max(0, visible.length - 1);
+  ensureSelectableIndex();
   renderHeader();
 
   console.log(paint('dim', 'Up/Down: move   Enter: run   q: quit'));
@@ -229,10 +245,14 @@ function renderMenu() {
 
     const cursor = index === selectedIndex ? paint('cyan', '>') : ' ';
     const indexText = String(index + 1).padStart(2, '0');
-    const label = index === selectedIndex
+    const disabled = isDisabled(action);
+    const disabledText = disabled ? paint('dim', ` [${disabledReason(action)}]`) : '';
+    const label = disabled
+      ? paint('dim', action.label)
+      : index === selectedIndex
       ? paint('black', paint('bgCyan', paint('bold', ` ${action.label} `)))
       : action.label;
-    console.log(` ${cursor} ${paint('dim', indexText)}  ${label}`);
+    console.log(` ${cursor} ${paint('dim', indexText)}  ${label}${disabledText}`);
   });
 
   console.log('');
@@ -279,13 +299,19 @@ async function runAction(action) {
   }
 
   const bin = resolveBin(action.bin);
-  console.log(paint('cyan', `Running: mop-flow ${args.join(' ')}`));
+  const commands = Array.isArray(args[0]) ? args : [args];
+  let result = { status: 0 };
   console.log(paint('gray', '-'.repeat(74)));
-  const result = spawnSync('node', [bin, ...args], {
-    cwd,
-    stdio: 'inherit',
-    windowsHide: false
-  });
+  for (const commandArgs of commands) {
+    console.log(paint('cyan', `Running: mop-flow ${commandArgs.join(' ')}`));
+    result = spawnSync('node', [bin, ...commandArgs], {
+      cwd,
+      stdio: 'inherit',
+      windowsHide: false
+    });
+    if (result.status !== 0) break;
+    if (commands.length > 1) console.log(paint('gray', '-'.repeat(74)));
+  }
   console.log(paint('gray', '-'.repeat(74)));
   if (result.status === 0) console.log(paint('green', 'Task completed. Press Enter to return to menu...'));
   else console.log(paint('red', `Task exited with code ${result.status}. Press Enter to return to menu...`));
@@ -314,12 +340,11 @@ function exitTui() {
 
 function handleKeypress(str, key = {}) {
   if (busy) return;
-  const visible = visibleActions();
   if (key.name === 'up') {
-    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : visible.length - 1;
+    moveSelection(-1);
     renderMenu();
   } else if (key.name === 'down') {
-    selectedIndex = selectedIndex < visible.length - 1 ? selectedIndex + 1 : 0;
+    moveSelection(1);
     renderMenu();
   } else if (key.name === 'return') {
     runAction(selectedAction());
@@ -333,7 +358,14 @@ export function startTui() {
     console.log(JSON.stringify({
       packageVersion,
       installedVersion,
-      actions: visibleActions().map(({ id, group, label, description }) => ({ id, group, label, description }))
+      actions: visibleActions().map((action) => ({
+        id: action.id,
+        group: action.group,
+        label: action.label,
+        description: action.description,
+        disabled: isDisabled(action),
+        disabledReason: disabledReason(action)
+      }))
     }, null, 2));
     return;
   }

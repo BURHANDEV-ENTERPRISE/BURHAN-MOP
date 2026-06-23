@@ -93,7 +93,8 @@ try {
         autoSync: true
       }, null, 2), 'utf8');
 
-      const env = { MOP_FLOW_HOME: svcHome };
+      const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+      const env = { MOP_FLOW_HOME: svcHome, MOP_FLOW_PACKAGE_VERSION: packageVersion };
       const registerOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), 'service', 'register', '--json'], { cwd: svcTarget, env }));
       if (!registerOut.ok || registerOut.entry?.projectId !== 'prj_smoke_service') {
         throw new Error('service register did not record the linked project');
@@ -104,15 +105,34 @@ try {
         throw new Error('service list did not include the registered project');
       }
 
+      writeFileSync(join(svcTarget, '.MOP', 'VERSION.txt'), '1.0.0', 'utf8');
       const menuOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), '--menu-json'], { cwd: svcTarget, env }));
-      const menuIds = new Set((menuOut.actions || []).map((action) => action.id));
-      for (const required of ['link', 'relay-once', 'service-install', 'service-list']) {
-        if (!menuIds.has(required)) {
-          throw new Error(`TUI menu is missing ${required}`);
+      const menuIds = (menuOut.actions || []).map((action) => action.id);
+      const expectedMenu = ['install', 'update', 'doctor', 'status', 'link', 'delete', 'skills', 'exit'];
+      if (JSON.stringify(menuIds) !== JSON.stringify(expectedMenu)) {
+        throw new Error(`TUI menu mismatch: ${menuIds.join(',')}`);
+      }
+      const menuById = new Map((menuOut.actions || []).map((action) => [action.id, action]));
+      if (menuById.get('install')?.disabled !== true) {
+        throw new Error('TUI install must be visible but disabled when installed');
+      }
+      if (menuById.get('update')?.disabled !== false) {
+        throw new Error('TUI update must be enabled when installed version is older');
+      }
+      for (const forbidden of ['relay-once', 'service-install', 'service-list', 'gui']) {
+        if (menuIds.includes(forbidden)) {
+          throw new Error(`TUI menu should not expose ${forbidden}`);
         }
       }
-      if (menuIds.has('gui')) {
-        throw new Error('TUI menu should not expose a GUI item');
+
+      writeFileSync(join(svcTarget, '.MOP', 'VERSION.txt'), packageVersion, 'utf8');
+      const currentMenu = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), '--menu-json'], { cwd: svcTarget, env }));
+      const currentById = new Map((currentMenu.actions || []).map((action) => [action.id, action]));
+      if (currentById.get('install')?.disabled !== true) {
+        throw new Error('TUI install must stay disabled when installed');
+      }
+      if (currentById.get('update')?.disabled !== true) {
+        throw new Error('TUI update must be disabled when installed version is current');
       }
 
       const registryText = readFileSync(join(svcHome, 'projects.json'), 'utf8');
