@@ -155,29 +155,15 @@ function visibleActions() {
   return actions;
 }
 
-function firstEnabledIndex() {
-  const visible = visibleActions();
-  const found = visible.findIndex((action) => !isDisabled(action));
-  return found === -1 ? 0 : found;
-}
-
 function ensureSelectableIndex() {
   const visible = visibleActions();
   if (selectedIndex >= visible.length) selectedIndex = Math.max(0, visible.length - 1);
-  if (isDisabled(visible[selectedIndex])) selectedIndex = firstEnabledIndex();
 }
 
 function moveSelection(direction) {
   const visible = visibleActions();
   if (!visible.length) return;
-  let next = selectedIndex;
-  for (let i = 0; i < visible.length; i += 1) {
-    next = (next + direction + visible.length) % visible.length;
-    if (!isDisabled(visible[next])) {
-      selectedIndex = next;
-      return;
-    }
-  }
+  selectedIndex = (selectedIndex + direction + visible.length) % visible.length;
 }
 
 function refreshState() {
@@ -247,10 +233,10 @@ function renderMenu() {
     const indexText = String(index + 1).padStart(2, '0');
     const disabled = isDisabled(action);
     const disabledText = disabled ? paint('dim', ` [${disabledReason(action)}]`) : '';
-    const label = disabled
-      ? paint('dim', action.label)
-      : index === selectedIndex
+    const label = index === selectedIndex
       ? paint('black', paint('bgCyan', paint('bold', ` ${action.label} `)))
+      : disabled
+      ? paint('dim', action.label)
       : action.label;
     console.log(` ${cursor} ${paint('dim', indexText)}  ${label}${disabledText}`);
   });
@@ -271,7 +257,7 @@ function resolveBin(kind) {
 
 async function askLine(label) {
   if (process.stdin.isTTY) process.stdin.setRawMode(false);
-  process.stdin.removeAllListeners('keypress');
+  unbindMenuKeypress();
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const answer = await new Promise((resolveAnswer) => {
     rl.question(`${paint('cyan', label)}: `, resolveAnswer);
@@ -319,12 +305,13 @@ async function runAction(action) {
 }
 
 function waitForReturn() {
+  unbindMenuKeypress();
   const returnListener = (str, key) => {
     if (key.name !== 'return') return;
     process.stdin.removeListener('keypress', returnListener);
     busy = false;
     if (process.stdin.isTTY) process.stdin.setRawMode(true);
-    process.stdin.on('keypress', handleKeypress);
+    bindMenuKeypress();
     renderMenu();
   };
   readline.emitKeypressEvents(process.stdin);
@@ -353,6 +340,17 @@ function handleKeypress(str, key = {}) {
   }
 }
 
+function unbindMenuKeypress() {
+  while (process.stdin.listenerCount('keypress', handleKeypress) > 0) {
+    process.stdin.removeListener('keypress', handleKeypress);
+  }
+}
+
+function bindMenuKeypress() {
+  unbindMenuKeypress();
+  process.stdin.on('keypress', handleKeypress);
+}
+
 export function startTui() {
   if (process.argv.includes('--menu-json')) {
     console.log(JSON.stringify({
@@ -379,7 +377,7 @@ export function startTui() {
   renderMenu();
   readline.emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
-  process.stdin.on('keypress', handleKeypress);
+  bindMenuKeypress();
 }
 
 if (resolve(process.argv[1] || '') === resolve(fileURLToPath(import.meta.url))) {
