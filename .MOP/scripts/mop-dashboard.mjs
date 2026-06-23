@@ -7,11 +7,31 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { platform } from 'node:os';
+import { spawn } from 'node:child_process';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const STATE_PATH = resolve(__dir, '..', 'STATE.json');
 const DASHBOARD_DIR = resolve(__dir, '..', 'dashboard');
 const PORT = 3131;
+const shouldOpen = process.argv.includes('--open');
+
+function openBrowser(url) {
+  let command = 'xdg-open';
+  let args = [url];
+  if (platform() === 'win32') {
+    command = 'cmd';
+    args = ['/c', 'start', '', url];
+  } else if (platform() === 'darwin') {
+    command = 'open';
+  }
+  try {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true });
+    child.unref();
+  } catch {
+    // Opening the browser is best-effort; the URL is printed either way.
+  }
+}
 
 // ─── State Reader ─────────────────────────────────────────────────────────────
 function readState() {
@@ -119,9 +139,11 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n🟣 MOP Pixel Office berjalan: http://127.0.0.1:${PORT}`);
+  const url = `http://127.0.0.1:${PORT}`;
+  console.log(`\n🟣 MOP Pixel Office berjalan: ${url}`);
   console.log(`   API: http://127.0.0.1:${PORT}/api/state`);
   console.log(`   Tekan Ctrl+C untuk henti\n`);
+  if (shouldOpen) openBrowser(url);
 });
 
 // ─── Fallback Dashboard (inline HTML) ────────────────────────────────────────

@@ -41,6 +41,15 @@ function readJson(path, fallback = {}) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return fallback; }
 }
 
+function resolveMopFlowVersion(state) {
+  if (state.mopFlow?.version) return String(state.mopFlow.version);
+  try {
+    return readFileSync(join(coreDir, 'VERSION.txt'), 'utf8').trim();
+  } catch {
+    return '1.4.2';
+  }
+}
+
 function writeLinkFile(link) {
   mkdirSync(dirname(linkPath), { recursive: true });
   const tmp = `${linkPath}.tmp`;
@@ -81,7 +90,7 @@ export async function runLink(args = {}) {
     const manifest = {
       projectId,
       name: String(args.name || state.projectName || 'project'),
-      mopFlowVersion: String(state.mopFlow?.version || '1.3.x'),
+      mopFlowVersion: resolveMopFlowVersion(state),
       platform: platform(),
       capabilities: DEFAULT_CAPABILITIES,
     };

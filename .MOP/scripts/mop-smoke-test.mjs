@@ -104,6 +104,14 @@ try {
         throw new Error('service list did not include the registered project');
       }
 
+      const menuOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), '--menu-json'], { cwd: svcTarget, env }));
+      const menuIds = new Set((menuOut.actions || []).map((action) => action.id));
+      for (const required of ['link', 'relay-once', 'service-install', 'service-list', 'gui']) {
+        if (!menuIds.has(required)) {
+          throw new Error(`TUI menu is missing ${required}`);
+        }
+      }
+
       const registryText = readFileSync(join(svcHome, 'projects.json'), 'utf8');
       if (registryText.includes('tok_service_secret')) {
         throw new Error('service registry must not store link tokens');

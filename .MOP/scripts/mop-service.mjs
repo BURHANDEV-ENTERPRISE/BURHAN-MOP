@@ -18,7 +18,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readLink, resolveCoreDir, startRelay } from './mop-relay.mjs';
 
 const REGISTRY_SCHEMA = '1.0';
@@ -138,6 +138,12 @@ function startupDir() {
   return join(process.env.APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
 }
 
+function systemdUserDir() {
+  if (platform() !== 'linux') return null;
+  const configHome = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
+  return join(configHome, 'systemd', 'user');
+}
+
 function startupCmdPath() {
   const dir = startupDir();
   return dir ? join(dir, 'mop-flow-relay.cmd') : null;
@@ -145,6 +151,11 @@ function startupCmdPath() {
 
 function launcherPath() {
   return join(serviceHome(), 'mop-flow-relay.ps1');
+}
+
+function systemdUnitPath() {
+  const dir = systemdUserDir();
+  return dir ? join(dir, 'mop-flow-relay.service') : null;
 }
 
 function installWindowsAutostart() {
@@ -184,7 +195,82 @@ function uninstallWindowsAutostart() {
 }
 
 function isAutostartInstalled() {
-  return platform() === 'win32' && !!startupCmdPath() && existsSync(startupCmdPath());
+  if (platform() === 'win32') return !!startupCmdPath() && existsSync(startupCmdPath());
+  if (platform() === 'linux') return !!systemdUnitPath() && existsSync(systemdUnitPath());
+  return false;
+}
+
+function runSystemctl(args) {
+  return spawnSync('systemctl', ['--user', ...args], {
+    encoding: 'utf8',
+    windowsHide: true
+  });
+}
+
+function installLinuxAutostart() {
+  const dir = systemdUserDir();
+  if (!dir) throw new Error('linux_systemd_user_unavailable');
+  mkdirSync(serviceHome(), { recursive: true });
+  mkdirSync(dir, { recursive: true });
+
+  const unitPath = systemdUnitPath();
+  const unit = [
+    '[Unit]',
+    'Description=MOP Flow background relay service',
+    'After=network-online.target',
+    'Wants=network-online.target',
+    '',
+    '[Service]',
+    'Type=simple',
+    `Environment=MOP_FLOW_HOME=${serviceHome()}`,
+    'WorkingDirectory=%h',
+    'ExecStart=/usr/bin/env npx --yes mop-flow service run',
+    'Restart=always',
+    'RestartSec=5',
+    '',
+    '[Install]',
+    'WantedBy=default.target',
+    ''
+  ].join('\n');
+  writeFileSync(unitPath, unit, 'utf8');
+
+  const daemonReload = runSystemctl(['daemon-reload']);
+  const enable = runSystemctl(['enable', '--now', 'mop-flow-relay.service']);
+  const systemctlOk = daemonReload.status === 0 && enable.status === 0;
+  return {
+    installed: true,
+    unitPath,
+    logPath: logPath(),
+    systemctlOk,
+    note: systemctlOk ? null : 'systemctl --user failed; service file was written, run `systemctl --user enable --now mop-flow-relay.service` manually'
+  };
+}
+
+function uninstallLinuxAutostart() {
+  const removed = [];
+  const unitPath = systemdUnitPath();
+  if (unitPath && existsSync(unitPath)) {
+    runSystemctl(['disable', '--now', 'mop-flow-relay.service']);
+    rmSync(unitPath, { force: true });
+    runSystemctl(['daemon-reload']);
+    removed.push(unitPath);
+  }
+  return { removed };
+}
+
+function installAutostart() {
+  if (platform() === 'win32') return installWindowsAutostart();
+  if (platform() === 'linux') return installLinuxAutostart();
+  return {
+    installed: false,
+    note: 'autostart_install_supported_on_windows_and_linux; run `npx mop-flow service run` under your OS service manager'
+  };
+}
+
+function uninstallAutostart() {
+  if (platform() === 'win32') return uninstallWindowsAutostart();
+  if (platform() === 'linux') return uninstallLinuxAutostart();
+  return { removed: [] };
 }
 
 function startDetachedService() {
@@ -305,14 +391,13 @@ export async function runService(args = {}) {
     if (action === 'install') {
       let registered = null;
       try { registered = registerProject(args['core-dir'] || args.project || resolveCoreDir()); } catch {}
-      const installed = platform() === 'win32'
-        ? installWindowsAutostart()
-        : { installed: false, note: 'autostart_install_supported_on_windows_first; run `npx mop-flow service run` under your OS service manager' };
+      const installed = installAutostart();
       const started = args.start ? startDetachedService() : null;
       return outputResult({ ...installed, registered: registered?.entry || null, started }, args, (r) => {
         const lines = ['MOP Flow relay autostart installed.'];
         if (r.registered) lines.push(`registered: ${r.registered.name} (${r.registered.projectId})`);
         if (r.startupPath) lines.push(`startup: ${r.startupPath}`);
+        if (r.unitPath) lines.push(`systemd: ${r.unitPath}`);
         if (r.logPath) lines.push(`log: ${r.logPath}`);
         if (r.started) lines.push(`started now: pid ${r.started.pid}`);
         if (r.note) lines.push(r.note);
@@ -320,7 +405,7 @@ export async function runService(args = {}) {
       });
     }
     if (action === 'uninstall') {
-      const result = platform() === 'win32' ? uninstallWindowsAutostart() : { removed: [] };
+      const result = uninstallAutostart();
       return outputResult(result, args, (r) => `removed autostart files: ${r.removed.length}`);
     }
     if (action === 'start') {

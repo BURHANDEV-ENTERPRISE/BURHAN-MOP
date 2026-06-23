@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/mop-flow">
-    <img src="https://img.shields.io/badge/V1.2.0-cb3837?style=for-the-badge&label=NPM" alt="npm version">
+    <img src="https://img.shields.io/badge/V1.4.2-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/mop-flow">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -89,6 +89,7 @@ After install, open your AI coding chat in that project and run:
 | Agent Router | 32 specialized agents available via `.MOP/STATE.json`. Picks one primary agent and adds support agents only when useful. |
 | Party Mode | Shows visible agent-to-agent discussion for multi-role decisions. |
 | MOP Flow | Provider-neutral skill bridge and MCP runtime wrapper across Claude, Codex, Gemini, and Antigravity. |
+| Brain Link Service | Links projects to MOP Agent, registers them locally, and keeps relays alive in the background. |
 | MOP Workflow | BMAD-inspired 10-phase flow from idea to release with readiness gates. |
 | Artifacts | Keeps plans, specs, reviews, and release notes under `.MOP/artifacts/`. |
 | Autosync | Commits and pushes as the real user, not as the AI tool identity. |
@@ -128,7 +129,8 @@ node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) serve
 
 `mop-flow link` saves the private link token in `.MOP/link.json` and registers
 the project in a per-user service registry on that PC. Run this once per PC to
-start all registered project relays automatically when Windows starts:
+start all registered project relays automatically when Windows starts or when a
+Linux user session starts:
 
 ```bash
 npx mop-flow service install --start
@@ -138,6 +140,9 @@ After that, every project you link from the same PC is picked up by the service.
 Use `npx mop-flow service list` to see registered projects. The service registry
 does not store link tokens; each project keeps its own gitignored
 `.MOP/link.json`.
+
+`npx mop-flow` also includes a Control Center menu for Link, Relay, Service, and
+the Pixel Office GUI dashboard.
 
 ## Team Workflow
 
@@ -157,7 +162,7 @@ and merges only when the workflow is safe.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | latest command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.2.0`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.2.0) |
+| GitHub release | [`v1.4.2`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.2) |
 | Node | `>=20` |
 
 ## Links

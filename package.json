@@ -59,6 +59,7 @@
   },
   "files": [
     "bin",
+    "CHANGELOG.md",
     "README.bm.md",
     "README.md",
     "AGENTS.md",

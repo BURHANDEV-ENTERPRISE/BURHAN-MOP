@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/mop-flow">
-    <img src="https://img.shields.io/badge/V1.2.0-cb3837?style=for-the-badge&label=NPM" alt="npm version">
+    <img src="https://img.shields.io/badge/V1.4.2-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
   <a href="https://github.com/BURHANDEV-ENTERPRISE/mop-flow">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
@@ -89,6 +89,7 @@ Selepas install, buka AI coding chat dalam project itu dan jalankan:
 | Agent Router | 32 ejen khusus tersedia via `.MOP/STATE.json`. Pilih satu primary agent dan tambah support agent bila perlu. |
 | Party Mode | Tunjuk perbincangan agent-to-agent untuk keputusan multi-role. |
 | MOP Flow | Skill bridge dan MCP runtime wrapper neutral provider untuk Claude, Codex, Gemini, dan Antigravity. |
+| Brain Link Service | Link project ke MOP Agent, daftar lokal, dan hidupkan relay background. |
 | MOP Workflow | Flow inspirasi BMAD 10-Fasa dari idea sampai release dengan readiness gate. |
 | Artifacts | Simpan plan, spec, review, dan release notes dalam `.MOP/artifacts/`. |
 | Autosync | Commit dan push guna identiti user sebenar, bukan identiti AI tool. |
@@ -128,7 +129,8 @@ node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) serve
 
 `mop-flow link` simpan token private dalam `.MOP/link.json` dan daftar project
 ke registry service lokal pada PC itu. Jalankan ini sekali sahaja pada setiap PC
-supaya semua relay project berdaftar auto hidup bila Windows start:
+supaya semua relay project berdaftar auto hidup bila Windows start atau bila
+Linux user session start:
 
 ```bash
 npx mop-flow service install --start
@@ -138,6 +140,9 @@ Selepas itu, setiap project yang anda link dari PC sama akan dipickup oleh
 service. Guna `npx mop-flow service list` untuk lihat project berdaftar.
 Registry service tidak simpan token; setiap project kekalkan token sendiri dalam
 `.MOP/link.json` yang gitignored.
+
+`npx mop-flow` juga ada menu Control Center untuk Link, Relay, Service, dan GUI
+Pixel Office.
 
 ## Workflow Team
 
@@ -157,7 +162,7 @@ dan merge hanya bila workflow selamat.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.2.0`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.2.0) |
+| GitHub release | [`v1.4.2`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.4.2) |
 | Node | `>=20` |
 
 ## Links
