@@ -141,8 +141,8 @@ service. Guna `npx mop-flow service list` untuk lihat project berdaftar.
 Registry service tidak simpan token; setiap project kekalkan token sendiri dalam
 `.MOP/link.json` yang gitignored.
 
-`npx mop-flow` juga ada menu Control Center untuk Link, Relay, Service, dan GUI
-Pixel Office.
+`npx mop-flow` juga ada menu Control Center yang ringkas untuk Link, Relay, dan
+Service.
 
 ## Workflow Team
 

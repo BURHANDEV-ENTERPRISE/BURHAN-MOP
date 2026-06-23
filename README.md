@@ -141,8 +141,8 @@ Use `npx mop-flow service list` to see registered projects. The service registry
 does not store link tokens; each project keeps its own gitignored
 `.MOP/link.json`.
 
-`npx mop-flow` also includes a Control Center menu for Link, Relay, Service, and
-the Pixel Office GUI dashboard.
+`npx mop-flow` also includes a compact Control Center menu for Link, Relay, and
+Service actions.
 
 ## Team Workflow
 

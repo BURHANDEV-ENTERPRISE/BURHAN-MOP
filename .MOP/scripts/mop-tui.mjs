@@ -61,8 +61,7 @@ const actions = [
     description: 'Copy MOP files into this project.',
     bin: 'installer',
     args: ['install'],
-    disabled: () => Boolean(installedVersion),
-    disabledReason: 'Already installed'
+    show: () => !installedVersion
   },
   {
     id: 'update',
@@ -71,8 +70,7 @@ const actions = [
     description: 'Refresh scripts and configs while preserving project state.',
     bin: 'installer',
     args: ['install', '--force'],
-    disabled: () => !installedVersion || installedVersion === packageVersion,
-    disabledReason: 'Nothing to update'
+    show: () => Boolean(installedVersion && installedVersion !== packageVersion)
   },
   {
     id: 'doctor',
@@ -100,8 +98,7 @@ const actions = [
       const url = await askLine('Paste Brain link URL');
       return url ? ['link', url] : null;
     },
-    disabled: () => !installedVersion,
-    disabledReason: 'Install first'
+    show: () => Boolean(installedVersion)
   },
   {
     id: 'relay-once',
@@ -110,8 +107,7 @@ const actions = [
     description: 'Send one project snapshot without staying connected.',
     bin: 'flow',
     args: ['relay', '--once'],
-    disabled: () => !installedVersion,
-    disabledReason: 'Install/link first'
+    show: () => Boolean(installedVersion)
   },
   {
     id: 'service-install',
@@ -130,16 +126,8 @@ const actions = [
     args: ['service', 'list']
   },
   {
-    id: 'gui',
-    group: 'TUI + GUI',
-    label: 'Start Pixel Office GUI',
-    description: 'Start the local browser dashboard at 127.0.0.1:3131.',
-    bin: 'dashboard',
-    args: ['--open']
-  },
-  {
     id: 'skills',
-    group: 'TUI + GUI',
+    group: 'Tools',
     label: 'Skills List',
     description: 'List portable and runtime-bridged skills.',
     bin: 'flow',
@@ -152,25 +140,28 @@ const actions = [
     description: 'Remove installed MOP files from this project.',
     bin: 'installer',
     args: ['delete'],
-    disabled: () => !installedVersion,
-    disabledReason: 'Not installed'
+    show: () => Boolean(installedVersion)
   },
   {
     id: 'exit',
     group: 'Danger Zone',
     label: 'Exit',
-    description: 'Close this dashboard.',
+    description: 'Close this menu.',
     bin: null,
     args: []
   }
 ];
 
 function selectedAction() {
-  return actions[selectedIndex];
+  return visibleActions()[selectedIndex];
 }
 
 function isDisabled(action) {
   return typeof action.disabled === 'function' && action.disabled();
+}
+
+function visibleActions() {
+  return actions.filter((action) => typeof action.show !== 'function' || action.show());
 }
 
 function refreshState() {
@@ -208,10 +199,10 @@ function statusPill(label, value, color = 'green') {
 }
 
 function renderHeader() {
-  const width = 74;
+  const width = 70;
   console.log(paint('cyan', line(width)));
-  console.log(row(paint('bold', 'MOP FLOW CONTROL CENTER'), statusPill('Package', packageVersion, 'green'), width));
-  console.log(row('Portable MemoryCore + Brain Relay Manager', installedVersion
+  console.log(row(paint('bold', 'MOP FLOW'), statusPill('Package', packageVersion, 'green'), width));
+  console.log(row('MemoryCore + Brain Relay', installedVersion
     ? statusPill('Installed', installedVersion, installedVersion === packageVersion ? 'green' : 'yellow')
     : statusPill('Installed', 'Not installed', 'gray'), width));
   console.log(paint('cyan', line(width)));
@@ -221,34 +212,35 @@ function renderHeader() {
 function renderMenu() {
   clearScreen();
   refreshState();
+  const visible = visibleActions();
+  if (selectedIndex >= visible.length) selectedIndex = Math.max(0, visible.length - 1);
   renderHeader();
 
-  console.log(paint('dim', 'Use arrow keys, Enter to run, q to quit.'));
+  console.log(paint('dim', 'Up/Down: move   Enter: run   q: quit'));
   console.log('');
 
   let currentGroup = '';
-  actions.forEach((action, index) => {
+  visible.forEach((action, index) => {
     if (action.group !== currentGroup) {
       currentGroup = action.group;
-      console.log(paint('magenta', currentGroup.toUpperCase()));
+      if (index > 0) console.log('');
+      console.log(paint('magenta', currentGroup));
     }
 
-    const disabled = isDisabled(action);
     const cursor = index === selectedIndex ? paint('cyan', '>') : ' ';
     const indexText = String(index + 1).padStart(2, '0');
-    const label = disabled
-      ? paint('dim', `${action.label} (${action.disabledReason || 'Disabled'})`)
-      : index === selectedIndex
-        ? paint('black', paint('bgCyan', paint('bold', ` ${action.label} `)))
-        : action.label;
-    const detail = disabled ? paint('dim', action.description) : paint('gray', action.description);
+    const label = index === selectedIndex
+      ? paint('black', paint('bgCyan', paint('bold', ` ${action.label} `)))
+      : action.label;
     console.log(` ${cursor} ${paint('dim', indexText)}  ${label}`);
-    console.log(`      ${detail}`);
   });
 
   console.log('');
   const action = selectedAction();
-  console.log(paint('dim', `Selected: ${action.label} - ${action.description}`));
+  console.log(paint('cyan', line(70)));
+  console.log(row(paint('bold', action.label), action.group, 70));
+  console.log(row(action.description, '', 70));
+  console.log(paint('cyan', line(70)));
 }
 
 function resolveBin(kind) {
@@ -322,11 +314,12 @@ function exitTui() {
 
 function handleKeypress(str, key = {}) {
   if (busy) return;
+  const visible = visibleActions();
   if (key.name === 'up') {
-    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : actions.length - 1;
+    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : visible.length - 1;
     renderMenu();
   } else if (key.name === 'down') {
-    selectedIndex = selectedIndex < actions.length - 1 ? selectedIndex + 1 : 0;
+    selectedIndex = selectedIndex < visible.length - 1 ? selectedIndex + 1 : 0;
     renderMenu();
   } else if (key.name === 'return') {
     runAction(selectedAction());
@@ -340,7 +333,7 @@ export function startTui() {
     console.log(JSON.stringify({
       packageVersion,
       installedVersion,
-      actions: actions.map(({ id, group, label, description }) => ({ id, group, label, description }))
+      actions: visibleActions().map(({ id, group, label, description }) => ({ id, group, label, description }))
     }, null, 2));
     return;
   }

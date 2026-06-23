@@ -106,10 +106,13 @@ try {
 
       const menuOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), '--menu-json'], { cwd: svcTarget, env }));
       const menuIds = new Set((menuOut.actions || []).map((action) => action.id));
-      for (const required of ['link', 'relay-once', 'service-install', 'service-list', 'gui']) {
+      for (const required of ['link', 'relay-once', 'service-install', 'service-list']) {
         if (!menuIds.has(required)) {
           throw new Error(`TUI menu is missing ${required}`);
         }
+      }
+      if (menuIds.has('gui')) {
+        throw new Error('TUI menu should not expose a GUI item');
       }
 
       const registryText = readFileSync(join(svcHome, 'projects.json'), 'utf8');
