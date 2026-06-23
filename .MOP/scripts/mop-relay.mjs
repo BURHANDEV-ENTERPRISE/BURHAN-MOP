@@ -52,14 +52,36 @@ function writeLink(coreDir, link) {
 }
 
 // ── snapshot builder (port of snapshot.ts) ──────────────────────────────────
-const SENSITIVE_KEY = /(token|secret|password|passwordhash|apikey|api_key)/i;
+// Keys whose NAME implies a secret — the whole field is dropped.
+const SENSITIVE_KEY =
+  /(token|secret|passphrase|password|passwordhash|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|credential|bearer|cookie|webhook)/i;
+
+// Values that LOOK like secrets even under an innocuous key (e.g. pasted into a
+// memory note) — the matching substring is masked. Catches the common shapes.
+const SECRET_VALUE = [
+  /sk-[A-Za-z0-9_-]{16,}/g,                                   // OpenAI / Anthropic style
+  /ghp_[A-Za-z0-9]{20,}/g,                                    // GitHub PAT
+  /github_pat_[A-Za-z0-9_]{20,}/g,                            // GitHub fine-grained PAT
+  /xox[baprs]-[A-Za-z0-9-]{10,}/g,                            // Slack
+  /AKIA[0-9A-Z]{16}/g,                                        // AWS access key id
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, // PEM
+  /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, // JWT
+];
+const REDACTED = '[redacted]';
+
+function redactValueString(s) {
+  let out = s;
+  for (const re of SECRET_VALUE) out = out.replace(re, REDACTED);
+  return out;
+}
 
 export function redactSensitive(value) {
+  if (typeof value === 'string') return redactValueString(value);
   if (Array.isArray(value)) return value.map(redactSensitive);
   if (value && typeof value === 'object') {
     const out = {};
     for (const [k, v] of Object.entries(value)) {
-      if (SENSITIVE_KEY.test(k)) continue;
+      if (SENSITIVE_KEY.test(k)) continue; // drop secret-named fields entirely
       out[k] = redactSensitive(v);
     }
     return out;
@@ -106,7 +128,8 @@ export function buildSnapshot(coreDir, projectId) {
     t: 'snapshot.push',
     projectId,
     state: redactSensitive(state),
-    memory: readMemory(coreDir),
+    // Memory summaries/bodies can contain pasted secrets — scan values too.
+    memory: redactSensitive(readMemory(coreDir)),
     artifacts: listArtifacts(coreDir),
   };
 }
@@ -123,9 +146,13 @@ async function getWebSocket() {
  * token in the query (`?token=`); the `ws` package additionally sends the header.
  */
 function openSocket(WS, wsUrl, token) {
-  const url = wsUrl + (wsUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
   const isWsPkg = WS !== globalThis.WebSocket;
-  return isWsPkg ? new WS(url, { headers: { Authorization: `Bearer ${token}` } }) : new WS(url);
+  // The `ws` package can set headers → keep the token OUT of the URL (it would
+  // otherwise leak into nginx/proxy access logs). Only the header-less global
+  // WebSocket falls back to a `?token=` query param.
+  if (isWsPkg) return new WS(wsUrl, { headers: { Authorization: `Bearer ${token}` } });
+  const url = wsUrl + (wsUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+  return new WS(url);
 }
 
 /** Open the link, push one snapshot, resolve when sent (or reject on failure). */
@@ -137,9 +164,12 @@ export async function pushSnapshotOnce(coreDir, link, timeoutMs = 10_000) {
   return new Promise((resolveP, rejectP) => {
     const ws = openSocket(WS, link.wsUrl, link.linkToken);
     const timer = setTimeout(() => { try { ws.close(); } catch {} rejectP(new Error('push_timeout')); }, timeoutMs);
+    let sent = false;
     ws.addEventListener?.('open', onOpen);
     ws.on?.('open', onOpen);
     function onOpen() {
+      if (sent) return; // ws pkg fires both addEventListener AND .on
+      sent = true;
       ws.send(JSON.stringify(snap));
       link.lastSyncAt = new Date().toISOString();
       try { writeLink(coreDir, link); } catch {}
@@ -182,7 +212,10 @@ export async function runRelay(args = {}) {
     const ws = openSocket(WS, link.wsUrl, link.linkToken);
     const send = (o) => { try { ws.send(JSON.stringify(o)); } catch {} };
 
+    let opened = false;
     const onOpen = () => {
+      if (opened) return; // ws pkg fires both addEventListener AND .on
+      opened = true;
       backoff = 1_000;
       const snap = buildSnapshot(coreDir, link.projectId);
       send(snap);
