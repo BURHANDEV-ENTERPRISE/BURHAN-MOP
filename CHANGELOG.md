@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.4 - TUI Navigation Fix
+
+- Fixed duplicate keypress listeners after returning from TUI actions such as Status.
+- Menu navigation now moves one item at a time instead of jumping after repeated actions.
+- Disabled menu items remain visible and selectable, while Enter stays blocked for those actions.
+- Updated README release references to `v1.4.4`.
+
 ## 1.4.3 - TUI Link Flow
 
 - Updated the TUI menu to the fixed set: Install, Update, Doctor, Status, Link, Delete, Skills, and Exit.

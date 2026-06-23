@@ -46,7 +46,7 @@ function resolveMopFlowVersion(state) {
   try {
     return readFileSync(join(coreDir, 'VERSION.txt'), 'utf8').trim();
   } catch {
-    return '1.4.3';
+    return '1.4.4';
   }
 }
 
