@@ -116,10 +116,28 @@ Helper dalam project:
 node .MOP/scripts/mop-core.mjs status
 node .MOP/scripts/mop-core.mjs validate
 node .MOP/scripts/mop-flow.mjs status
+node .MOP/scripts/mop-flow.mjs link <https://agent/v1/api/link/key>
+node .MOP/scripts/mop-flow.mjs service install --start
+node .MOP/scripts/mop-flow.mjs service list
 node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<task>"
 node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<apa berubah>"
 node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) server
 ```
+
+## Relay Brain Background
+
+`mop-flow link` simpan token private dalam `.MOP/link.json` dan daftar project
+ke registry service lokal pada PC itu. Jalankan ini sekali sahaja pada setiap PC
+supaya semua relay project berdaftar auto hidup bila Windows start:
+
+```bash
+npx mop-flow service install --start
+```
+
+Selepas itu, setiap project yang anda link dari PC sama akan dipickup oleh
+service. Guna `npx mop-flow service list` untuk lihat project berdaftar.
+Registry service tidak simpan token; setiap project kekalkan token sendiri dalam
+`.MOP/link.json` yang gitignored.
 
 ## Workflow Team
 

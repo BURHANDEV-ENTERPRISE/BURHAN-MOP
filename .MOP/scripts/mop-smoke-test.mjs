@@ -12,6 +12,7 @@ const suiteFilter = (() => {
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd || process.cwd(),
+    env: { ...process.env, ...(options.env || {}) },
     encoding: 'utf8'
   });
   if (result.status !== 0) {
@@ -73,6 +74,46 @@ try {
     parseJson(run('node', ['.MOP/scripts/mop-flow.mjs', 'manifest', 'refresh', '--json'], { cwd: target }));
     run('node', ['.MOP/scripts/mop-core.mjs', 'validate']);
     console.log('[suite:core] OK');
+  }
+
+  if (suiteFilter === 'all' || suiteFilter === 'service') {
+    const svcTarget = mkdtempSync(join(tmpdir(), 'mop-svc-'));
+    const svcHome = mkdtempSync(join(tmpdir(), 'mop-svc-home-'));
+    try {
+      parseJson(run('node', ['.MOP/scripts/burhan-mop.mjs', 'install', '--target', svcTarget, '--json']));
+      const linkPath = join(svcTarget, '.MOP', 'link.json');
+      writeFileSync(linkPath, JSON.stringify({
+        schemaVersion: '1.0',
+        agentUrl: 'https://agent.example.test',
+        wsUrl: 'wss://agent.example.test/link',
+        projectId: 'prj_smoke_service',
+        linkToken: 'tok_service_secret',
+        linkedAt: new Date().toISOString(),
+        lastSyncAt: null,
+        autoSync: true
+      }, null, 2), 'utf8');
+
+      const env = { MOP_FLOW_HOME: svcHome };
+      const registerOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), 'service', 'register', '--json'], { cwd: svcTarget, env }));
+      if (!registerOut.ok || registerOut.entry?.projectId !== 'prj_smoke_service') {
+        throw new Error('service register did not record the linked project');
+      }
+
+      const listOut = parseJson(run('node', [join(svcTarget, '.MOP/scripts/mop-flow.mjs'), 'service', 'list', '--json'], { cwd: svcTarget, env }));
+      if (!listOut.projects?.some((project) => project.projectId === 'prj_smoke_service')) {
+        throw new Error('service list did not include the registered project');
+      }
+
+      const registryText = readFileSync(join(svcHome, 'projects.json'), 'utf8');
+      if (registryText.includes('tok_service_secret')) {
+        throw new Error('service registry must not store link tokens');
+      }
+
+      console.log('[suite:service] OK');
+    } finally {
+      rmSync(svcTarget, { recursive: true, force: true });
+      rmSync(svcHome, { recursive: true, force: true });
+    }
   }
 
   // ─── Suite 2: Memory roundtrip + BM25 ───────────────────────────────────────

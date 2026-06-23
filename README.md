@@ -116,10 +116,28 @@ Local project helpers:
 node .MOP/scripts/mop-core.mjs status
 node .MOP/scripts/mop-core.mjs validate
 node .MOP/scripts/mop-flow.mjs status
+node .MOP/scripts/mop-flow.mjs link <https://agent/v1/api/link/key>
+node .MOP/scripts/mop-flow.mjs service install --start
+node .MOP/scripts/mop-flow.mjs service list
 node .MOP/scripts/mop-workflow.mjs help --actor <codename> --task "<task>"
 node .MOP/scripts/mop-autosycn.mjs run --actor <codename> --reason "<what changed>"
 node .MOP/scripts/mop-mcp.mjs start  # Native Model Context Protocol (MCP) server
 ```
+
+## Background Brain Relay
+
+`mop-flow link` saves the private link token in `.MOP/link.json` and registers
+the project in a per-user service registry on that PC. Run this once per PC to
+start all registered project relays automatically when Windows starts:
+
+```bash
+npx mop-flow service install --start
+```
+
+After that, every project you link from the same PC is picked up by the service.
+Use `npx mop-flow service list` to see registered projects. The service registry
+does not store link tokens; each project keeps its own gitignored
+`.MOP/link.json`.
 
 ## Team Workflow
 

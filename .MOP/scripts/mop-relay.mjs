@@ -183,33 +183,38 @@ export async function pushSnapshotOnce(coreDir, link, timeoutMs = 10_000) {
 }
 
 /** Long-running publisher: connect, push, handle ping/req, reconnect with backoff. */
-export async function runRelay(args = {}) {
-  const coreDir = resolveCoreDir();
+export async function startRelay(coreDir, args = {}) {
+  const absoluteCoreDir = resolve(coreDir);
   let link;
-  try { link = readLink(coreDir); }
-  catch (e) { console.error(`✗ ${e.message}`); process.exitCode = 1; return; }
-  const log = (s) => console.log(`[mop-flow] ${s}`);
+  try { link = readLink(absoluteCoreDir); }
+  catch (e) { throw e; }
+  const label = args.label ? `[${args.label}] ` : '';
+  const log = args.logger || ((s) => console.log(`[mop-flow] ${label}${s}`));
 
   if (args.once) {
     try {
-      const snap = await pushSnapshotOnce(coreDir, link);
+      const snap = await pushSnapshotOnce(absoluteCoreDir, link);
       log(`snapshot pushed → ${link.wsUrl} (${snap.memory.length} memories, ${snap.artifacts.length} artifacts)`);
     } catch (e) {
       console.error(`✗ ${e.message}`);
       process.exitCode = 1;
     }
-    return;
+    return { stop() {}, projectId: link.projectId, coreDir: absoluteCoreDir };
   }
 
   const WS = await getWebSocket();
-  if (!WS) { console.error('✗ no_websocket: upgrade to Node 21+ or run `npm i ws`'); process.exitCode = 1; return; }
+  if (!WS) throw new Error('no_websocket: upgrade to Node 21+ or run `npm i ws`');
 
   let backoff = 1_000;
   let stopped = false;
+  let activeSocket = null;
+  let reconnectTimer = null;
   const MAX_BACKOFF = 30_000;
 
   const connect = () => {
+    if (stopped) return;
     const ws = openSocket(WS, link.wsUrl, link.linkToken);
+    activeSocket = ws;
     const send = (o) => { try { ws.send(JSON.stringify(o)); } catch {} };
 
     let opened = false;
@@ -217,10 +222,10 @@ export async function runRelay(args = {}) {
       if (opened) return; // ws pkg fires both addEventListener AND .on
       opened = true;
       backoff = 1_000;
-      const snap = buildSnapshot(coreDir, link.projectId);
+      const snap = buildSnapshot(absoluteCoreDir, link.projectId);
       send(snap);
       link.lastSyncAt = new Date().toISOString();
-      try { writeLink(coreDir, link); } catch {}
+      try { writeLink(absoluteCoreDir, link); } catch {}
       log(`linked → ${link.wsUrl} · snapshot pushed (${snap.memory.length} memories)`);
     };
     const onMessage = (data) => {
@@ -232,7 +237,7 @@ export async function runRelay(args = {}) {
     const onClose = () => {
       if (stopped) return;
       log(`link closed · retry in ${backoff}ms`);
-      setTimeout(connect, backoff);
+      reconnectTimer = setTimeout(connect, backoff);
       backoff = Math.min(backoff * 2, MAX_BACKOFF);
     };
 
@@ -242,9 +247,30 @@ export async function runRelay(args = {}) {
     ws.addEventListener?.('error', () => { try { ws.close(); } catch {} }); ws.on?.('error', () => { try { ws.close(); } catch {} });
   };
 
-  process.on('SIGINT', () => { stopped = true; process.exit(0); });
   log(`relay starting for ${link.projectId} → ${link.wsUrl}`);
   connect();
+  return {
+    projectId: link.projectId,
+    coreDir: absoluteCoreDir,
+    stop() {
+      stopped = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      try { activeSocket?.close(); } catch {}
+    }
+  };
+}
+
+export async function runRelay(args = {}) {
+  const coreDir = args['core-dir'] || args.project || resolveCoreDir();
+  try {
+    const handle = await startRelay(coreDir, args);
+    if (handle && !args.once) {
+      process.on('SIGINT', () => { handle.stop(); process.exit(0); });
+    }
+  } catch (e) {
+    console.error(`âœ— ${e.message}`);
+    process.exitCode = 1;
+  }
 }
 
 // Direct invocation

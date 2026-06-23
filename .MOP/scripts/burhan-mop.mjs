@@ -42,6 +42,7 @@ const doctorEntries = [
   '.MOP/scripts/mop-workflow.mjs',
   '.MOP/scripts/mop-autosycn.mjs',
   '.MOP/scripts/mop-auto-deploy.mjs',
+  '.MOP/scripts/mop-service.mjs',
   '.MOP/scripts/mop-smoke-test.mjs',
   'bin/mop-detect-run.mjs',
   '.agents/AGENTS.md',

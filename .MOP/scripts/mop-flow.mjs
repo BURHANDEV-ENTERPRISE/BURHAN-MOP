@@ -398,6 +398,10 @@ function main() {
     const relayArgs = parseArgs(afterCommand);
     return import('./mop-relay.mjs').then((m) => m.runRelay(relayArgs));
   }
+  if (command === 'service' || command === 'autostart') {
+    const serviceArgs = parseArgs(afterCommand);
+    return import('./mop-service.mjs').then((m) => m.runService(serviceArgs));
+  }
 
   console.log(`Usage:
   node .MOP/scripts/mop-flow.mjs [tui]
@@ -410,7 +414,9 @@ function main() {
   node .MOP/scripts/mop-flow.mjs bridge refresh [--json]
   node .MOP/scripts/mop-flow.mjs mcp start
   node .MOP/scripts/mop-flow.mjs link <https://agent/v1/api/link/key> [--name N] [--no-push] [--json]
-  node .MOP/scripts/mop-flow.mjs relay [--once]`);
+  node .MOP/scripts/mop-flow.mjs relay [--once]
+  node .MOP/scripts/mop-flow.mjs service install [--start]
+  node .MOP/scripts/mop-flow.mjs service list [--json]`);
 }
 
 try {

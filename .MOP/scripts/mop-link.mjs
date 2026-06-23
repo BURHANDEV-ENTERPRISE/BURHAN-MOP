@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { platform } from 'node:os';
 import { resolveCoreDir, pushSnapshotOnce } from './mop-relay.mjs';
+import { registerProject } from './mop-service.mjs';
 
 const LINK_SCHEMA = '1.0';
 const DEFAULT_CAPABILITIES = {
@@ -113,6 +114,8 @@ export async function runLink(args = {}) {
       autoSync: true,
     };
     writeLinkFile(link);
+    let registered = false;
+    try { registerProject(coreDir, link, { name: manifest.name }); registered = true; } catch { /* service registry is best-effort */ }
 
     // Push one snapshot so the project appears in the Brain right away.
     let pushed = false;
@@ -120,7 +123,7 @@ export async function runLink(args = {}) {
       try { await pushSnapshotOnce(coreDir, link); pushed = true; } catch { /* best-effort */ }
     }
 
-    return report(link, asJson, 'linked', pushed);
+    return report(link, asJson, 'linked', pushed, registered);
   } catch (err) {
     if (asJson) console.log(JSON.stringify({ ok: false, error: err.message }, null, 2));
     else console.error(`✗ ${err.message}`);
@@ -128,17 +131,18 @@ export async function runLink(args = {}) {
   }
 }
 
-function report(link, asJson, verb, pushed) {
+function report(link, asJson, verb, pushed, registered = false) {
   if (asJson) {
     const { linkToken, ...safe } = link;
-    console.log(JSON.stringify({ ok: true, verb, pushed, link: { ...safe, hasToken: !!linkToken } }, null, 2));
+    console.log(JSON.stringify({ ok: true, verb, pushed, registered, link: { ...safe, hasToken: !!linkToken } }, null, 2));
     return;
   }
   console.log(`🔗 ${verb}: ${link.projectId} → ${link.agentUrl}`);
   console.log(`   ws: ${link.wsUrl}`);
   console.log(`   snapshot: ${pushed ? 'pushed ✓ (project now visible in the Brain)' : 'not pushed — run `npx mop-flow relay --once`'}`);
   console.log(`   saved: .MOP/link.json (gitignored)`);
-  console.log(`   keep it live:  npx mop-flow relay`);
+  console.log(`   background: ${registered ? 'registered for MOP Flow service' : 'not registered'}`);
+  console.log(`   autostart: npx mop-flow service install --start  (run once per PC)`);
 }
 
 // Direct invocation
