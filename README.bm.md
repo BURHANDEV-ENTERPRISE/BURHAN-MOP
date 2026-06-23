@@ -8,7 +8,7 @@
   <a href="https://www.npmjs.com/package/mop-flow">
     <img src="https://img.shields.io/badge/V1.2.0-cb3837?style=for-the-badge&label=NPM" alt="npm version">
   </a>
-  <a href="https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP">
+  <a href="https://github.com/BURHANDEV-ENTERPRISE/mop-flow">
     <img src="https://img.shields.io/badge/GitHub-BURHAN--MOP-181717?style=for-the-badge&logo=github" alt="GitHub repository">
   </a>
   <img src="https://img.shields.io/badge/Node-%3E%3D20-1FAE4B?style=for-the-badge&logo=node.js&logoColor=white" alt="Node 20+">
@@ -139,11 +139,11 @@ dan merge hanya bila workflow selamat.
 | npm package | [`mop-flow`](https://www.npmjs.com/package/mop-flow) |
 | command | `npx mop-flow install` |
 | legacy alias | `npx burhan-mop install` |
-| GitHub release | [`v1.2.0`](https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP/releases/tag/v1.2.0) |
+| GitHub release | [`v1.2.0`](https://github.com/BURHANDEV-ENTERPRISE/mop-flow/releases/tag/v1.2.0) |
 | Node | `>=20` |
 
 ## Links
 
 - npm: https://www.npmjs.com/package/mop-flow
-- GitHub: https://github.com/BURHANDEV-ENTERPRISE/BURHAN-MOP
+- GitHub: https://github.com/BURHANDEV-ENTERPRISE/mop-flow
 - English README: [README.md](./README.md)

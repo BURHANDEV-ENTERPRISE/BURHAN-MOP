@@ -82,4 +82,4 @@ Before doing anything, read `.MOP/STATE.json` and follow
 Installer command: `npx mop-flow install`.
 Legacy compatibility command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
-`npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
+`npx --yes github:BURHANDEV-ENTERPRISE/mop-flow install`.

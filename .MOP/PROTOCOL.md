@@ -491,7 +491,7 @@ The short package command works after the package is published to npm. The old
 an npm publish, install directly from GitHub:
 
 ```bash
-npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install
+npx --yes github:BURHANDEV-ENTERPRISE/mop-flow install
 ```
 
 Local equivalent:

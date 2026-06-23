@@ -79,7 +79,7 @@ workflow phase, and names the next artifact/gate.
 Installer command: `npx mop-flow install`.
 Legacy compatibility command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
-`npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
+`npx --yes github:BURHANDEV-ENTERPRISE/mop-flow install`.
 
 During `/mop-setup`, ask whether to activate auto-deploy after the Git/GitHub
 identity questions.

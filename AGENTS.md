@@ -95,7 +95,7 @@ workflow phase, and names the next artifact/gate.
 Installer command: `npx mop-flow install`.
 Legacy compatibility command: `npx burhan-mop install`.
 GitHub source fallback for development builds:
-`npx --yes github:BURHANDEV-ENTERPRISE/BURHAN-MOP install`.
+`npx --yes github:BURHANDEV-ENTERPRISE/mop-flow install`.
 
 This directory is the portable **MOP Flow** agent core. MOP Flow is the
 provider-neutral layer above upstream Ruflo / Claude Flow runtime compatibility.
